@@ -1,0 +1,107 @@
+# Production stack. Differences from docker-compose.yml:
+#   * no database/redis/backend ports are published; only nginx listens, on 80 and 443
+#   * TLS terminates at nginx using certificates mounted from ./certs (see docs/DEPLOYMENT.md)
+#   * every secret comes from the environment (`.env.prod`, never committed); nothing has a default
+#   * migrations run once, as the owner role, in a separate job before the API starts
+#   * the API container never holds the owner credentials
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?}
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      DB_OWNER_PASSWORD: ${DB_OWNER_PASSWORD:?}
+      DB_APP_USER_PASSWORD: ${DB_APP_USER_PASSWORD:?}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+      - ./infra/postgres/init.sql:/opt/taskflow/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [internal]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]  # cache and counters only
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [internal]
+
+  migrate:
+    build: ./backend
+    restart: "no"
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      MIGRATION_DATABASE_URL: postgresql+asyncpg://owner:${DB_OWNER_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [internal]
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      ENABLE_DOCS: ${ENABLE_DOCS:-false}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:?}
+      DATABASE_URL: postgresql+asyncpg://app_user:${DB_APP_USER_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?}
+      COOKIE_SECURE: "true"
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-smtp}
+      EMAIL_FROM: ${EMAIL_FROM:?}
+      SMTP_HOST: ${SMTP_HOST:?}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      LOG_JSON: "true"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [internal]
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    networks: [internal]
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+      - frontend
+    networks: [internal, public]
+
+networks:
+  internal:
+    internal: false # outbound access is needed for SMTP; nothing but nginx publishes a port
+  public: {}
+
+volumes:
+  pgdata:

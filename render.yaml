@@ -1,0 +1,62 @@
+# Render blueprint: a STARTING POINT, not a tested deployment. Read docs/DEPLOYMENT.md first.
+#
+# Manual steps Render cannot do for you:
+#   1. create the `owner` and `app_user` database roles (infra/postgres/init.sql)
+#   2. set the secret values marked `sync: false`
+services:
+  - type: web
+    name: taskflow-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    preDeployCommand: alembic upgrade head
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: ENABLE_DOCS
+        value: "false"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: LOG_JSON
+        value: "true"
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL # the app_user URL, in the asyncpg form postgresql+asyncpg://...
+        sync: false
+      - key: MIGRATION_DATABASE_URL # the owner URL; used only by preDeployCommand
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: taskflow-redis
+          property: connectionString
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: EMAIL_BACKEND
+        value: smtp
+      - key: EMAIL_FROM
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+
+  - type: web
+    name: taskflow-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+
+  - type: keyvalue
+    name: taskflow-redis
+    ipAllowList: [] # internal access only
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  - name: taskflow-db
+    plan: free
+    databaseName: taskflow

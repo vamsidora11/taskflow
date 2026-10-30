@@ -7,6 +7,8 @@ WORKDIR /srv
 
 COPY pyproject.toml ./
 COPY app ./app
+COPY alembic.ini ./
+COPY migrations ./migrations
 RUN pip install --no-cache-dir .
 
 RUN useradd --create-home appuser

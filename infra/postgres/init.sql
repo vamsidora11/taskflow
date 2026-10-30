@@ -1,6 +1,16 @@
--- Runs once, on first start of an empty data volume.
--- DEV-ONLY placeholder passwords that match .env.example. Phase 1 replaces this with
--- env-driven credentials and the grants/RLS policies described in PLAN.md section 4.
--- The runtime role must never own tables or be a superuser, or RLS is bypassed.
-CREATE ROLE owner LOGIN PASSWORD 'change-me-owner';
-CREATE ROLE app_user LOGIN PASSWORD 'change-me-app' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+-- Bootstrap roles and database ownership. Run by init.sh as the postgres superuser, on the
+-- first start of an empty data volume. Passwords arrive as psql variables, never literals.
+--
+--   owner     owns the schema and runs migrations
+--   app_user  runs the API: DML grants only (granted by migrations), not a superuser, not an
+--             owner, and without BYPASSRLS, so row-level security always applies to it
+CREATE ROLE owner LOGIN PASSWORD :'owner_password'
+  NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+CREATE ROLE app_user LOGIN PASSWORD :'app_user_password'
+  NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+
+-- :"db" is the identifier-quoted database name
+ALTER DATABASE :"db" OWNER TO owner;
+REVOKE ALL ON DATABASE :"db" FROM PUBLIC;
+GRANT CONNECT ON DATABASE :"db" TO owner, app_user;
+GRANT USAGE ON SCHEMA public TO app_user;

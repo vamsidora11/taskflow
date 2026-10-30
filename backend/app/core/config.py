@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     rate_limit_write_per_user: str = "120/minute"
     rate_limit_read_per_user: str = "600/minute"
 
+    invitation_ttl_days: int = 7
+    email_from: str = "TaskFlow <no-reply@taskflow.local>"
     email_backend: str = "console"
     smtp_host: str | None = None
     smtp_port: int = 587

@@ -83,6 +83,9 @@ def new_refresh_token() -> str:
     return secrets.token_urlsafe(48)
 
 
-def hash_refresh_token(token: str) -> str:
-    """SHA-256 is enough here: the input is 384 bits of randomness, not a guessable password."""
+def hash_token(token: str) -> str:
+    """SHA-256 is enough here: the input is 256+ bits of randomness, not a guessable password."""
     return hashlib.sha256(token.encode()).hexdigest()
+
+
+hash_refresh_token = hash_token

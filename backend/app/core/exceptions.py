@@ -45,3 +45,45 @@ class OrganizationNotFoundError(AppError):
     status_code = 404
     code = "ORGANIZATION_NOT_FOUND"
     message = "Organization not found"
+
+
+class PermissionDeniedError(AppError):
+    status_code = 403
+    code = "PERMISSION_DENIED"
+    message = "You do not have permission to perform this action"
+
+
+class ValidationFailedError(AppError):
+    status_code = 422
+    code = "VALIDATION_ERROR"
+    message = "Invalid request"
+
+
+class InvalidCursorError(AppError):
+    status_code = 422
+    code = "INVALID_CURSOR"
+    message = "Invalid pagination cursor"
+
+
+class MemberNotFoundError(AppError):
+    status_code = 404
+    code = "MEMBER_NOT_FOUND"
+    message = "Member not found"
+
+
+class AlreadyMemberError(AppError):
+    status_code = 409
+    code = "ALREADY_MEMBER"
+    message = "This user is already a member of the organization"
+
+
+class LastAdminError(AppError):
+    status_code = 409
+    code = "LAST_ADMIN"
+    message = "An organization must keep at least one admin"
+
+
+class InvitationNotFoundError(AppError):
+    status_code = 404
+    code = "INVITATION_NOT_FOUND"
+    message = "Invitation is invalid, expired or already used"

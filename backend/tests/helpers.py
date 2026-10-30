@@ -123,3 +123,55 @@ async def create_org(api: AsyncClient, admin_engine: AsyncEngine) -> OrgSetup:
     manager = await add_member(api, admin_engine, org_id, "manager")
     member = await add_member(api, admin_engine, org_id, "member")
     return OrgSetup(org_id=org_id, admin=admin, manager=manager, member=member)
+
+
+async def make_board(
+    api: AsyncClient,
+    actor: Actor,
+    name: str = "Roadmap",
+    columns: list[str] | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {"name": name}
+    if columns is not None:
+        payload["columns"] = columns
+    resp = await api.post("/api/v1/boards", json=payload, headers=actor.headers)
+    assert resp.status_code == 201, resp.text
+    body: dict[str, Any] = resp.json()
+    return body
+
+
+async def make_task(
+    api: AsyncClient, actor: Actor, board_id: str, title: str = "A task", **fields: Any
+) -> dict[str, Any]:
+    resp = await api.post(
+        f"/api/v1/boards/{board_id}/tasks", json={"title": title, **fields}, headers=actor.headers
+    )
+    assert resp.status_code == 201, resp.text
+    body: dict[str, Any] = resp.json()
+    return body
+
+
+async def list_all_tasks(
+    api: AsyncClient, actor: Actor, board_id: str, **params: Any
+) -> list[dict[str, Any]]:
+    """Every task on the board, following next_cursor to the end."""
+    items: list[dict[str, Any]] = []
+    cursor: str | None = None
+    while True:
+        query = {**params, **({"cursor": cursor} if cursor else {})}
+        resp = await api.get(
+            f"/api/v1/boards/{board_id}/tasks", params=query, headers=actor.headers
+        )
+        assert resp.status_code == 200, resp.text
+        items += resp.json()["items"]
+        cursor = resp.json()["next_cursor"]
+        if cursor is None:
+            return items
+
+
+async def assert_positions_dense(api: AsyncClient, actor: Actor, board: dict[str, Any]) -> None:
+    """Within every column, live task positions are exactly 0..n-1."""
+    tasks = await list_all_tasks(api, actor, board["id"])
+    for column in board["columns"]:
+        positions = sorted(t["position"] for t in tasks if t["column_id"] == column["id"])
+        assert positions == list(range(len(positions))), (column["name"], positions)

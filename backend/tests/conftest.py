@@ -4,12 +4,14 @@ from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 
 import pytest
+from fakeredis import FakeAsyncRedis, FakeServer
 from httpx import ASGITransport, AsyncClient
+from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from app.api.deps import get_email_sender, get_factory
+from app.api.deps import get_email_sender, get_factory, get_redis_client
 from app.db.session import SessionFactory
 from app.main import create_app
 from tests.db_utils import DbUrls, drop_database, provision_database, server_available
@@ -55,12 +57,20 @@ def app_session_factory(app_engine: AsyncEngine) -> SessionFactory:
 
 
 @pytest.fixture
+def redis_client() -> Redis:
+    """An in-memory Redis, fresh per test. Real Redis is covered by test_idempotency_store."""
+    return FakeAsyncRedis(server=FakeServer())
+
+
+@pytest.fixture
 def mailbox() -> Mailbox:
     return Mailbox()
 
 
 @pytest.fixture
-async def api(database: DbUrls, mailbox: Mailbox) -> AsyncIterator[AsyncClient]:
+async def api(
+    database: DbUrls, mailbox: Mailbox, redis_client: Redis
+) -> AsyncIterator[AsyncClient]:
     """The real app wired to the test database as the non-owner runtime role.
 
     https base URL so the Secure refresh cookie is stored and replayed like a browser would.
@@ -72,6 +82,7 @@ async def api(database: DbUrls, mailbox: Mailbox) -> AsyncIterator[AsyncClient]:
     app = create_app()
     app.dependency_overrides[get_factory] = lambda: factory
     app.dependency_overrides[get_email_sender] = lambda: mailbox
+    app.dependency_overrides[get_redis_client] = lambda: redis_client
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="https://test") as client:
         yield client

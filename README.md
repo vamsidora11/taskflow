@@ -1,7 +1,7 @@
 # TaskFlow
 
 Multi-tenant SaaS task management platform. See [PLAN.md](PLAN.md) for the full specification and
-[CLAUDE.md](CLAUDE.md) for contributor conventions. Current state: Phase 3 (RBAC and organization management).
+[CLAUDE.md](CLAUDE.md) for contributor conventions. Current state: Phase 4 (boards, columns and tasks).
 
 ## Quick start
 
@@ -79,6 +79,30 @@ matrix from PLAN.md section 5 independently and checks every role and permission
   development. Use `smtp` anywhere else.
 - The invitation token travels in the URL path (`/org/invitations/{token}/accept`), as specified,
   so it can appear in HTTP access logs. Treat those logs as sensitive or switch access logging off.
+
+### Boards, columns and tasks
+
+- Every tenant table (`boards`, `board_columns`, `tasks`) carries `organization_id` and is covered by
+  forced RLS. Another organization's board or task answers 404, exactly like one that does not exist.
+- A new board gets To Do / In Progress / Done unless `columns` is supplied. Archiving (`DELETE`)
+  makes a board read-only and hides it from the default list; `PATCH is_archived=false` restores it.
+- Tasks keep a dense 0-based `position` within their column. Moving, creating and deleting take a row
+  lock on the board and renumber in one transaction, so concurrent edits cannot interleave and a
+  failed move changes nothing. Deleting a task is a soft delete; a column that still holds live
+  tasks cannot be deleted.
+- Ownership rules (service layer): admins and managers edit, move and reassign any task; a member
+  edits and moves only tasks assigned to them, cannot reassign, and can create a task only for
+  themselves or unassigned. Deleting tasks is admin/manager only.
+- Task lists use keyset pagination in board order (column, then position). A task moved between page
+  requests can appear twice or be skipped; the cursor is stable for a static board, not a snapshot.
+- `POST /boards/{id}/tasks` honours `Idempotency-Key` (max 128 chars). The first response is kept in
+  Redis for 24 hours and replayed with `Idempotent-Replay: true`; the same key with a different body
+  is 409; concurrent duplicates get 409 while the first runs; a failed request releases its key.
+  Keys are scoped to organization, user and URL, and are stored hashed. If Redis is unreachable, a
+  request that sends the header gets 503 (a silent duplicate would defeat the point), while requests
+  without it are unaffected.
+- `docs/openapi.json` is the committed API contract. After changing any route or schema run
+  `cd backend && python -m scripts.export_openapi`; a test and CI fail if it is stale.
 
 ## Frontend (local)
 

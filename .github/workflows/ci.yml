@@ -50,5 +50,9 @@ jobs:
         run: ruff format --check .
       - name: mypy
         run: mypy app scripts tests
+      - name: Verify OpenAPI spec is up to date
+        run: |
+          python -m scripts.export_openapi
+          git diff --exit-code ../docs/openapi.json
       - name: pytest
         run: pytest

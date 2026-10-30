@@ -1,0 +1,4014 @@
+{
+  "components": {
+    "schemas": {
+      "AcceptInvitationRequest": {
+        "examples": [
+          {
+            "full_name": "Grace Hopper",
+            "password": "correct horse battery staple"
+          }
+        ],
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Display name. Required only when the invited address has no account yet.",
+            "title": "Full Name"
+          },
+          "password": {
+            "description": "New accounts: the password to set (at least 12 characters). Existing accounts: the account's current password.",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "title": "AcceptInvitationRequest",
+        "type": "object"
+      },
+      "BoardCreate": {
+        "examples": [
+          {
+            "columns": [
+              "Backlog",
+              "In Progress",
+              "Review",
+              "Done"
+            ],
+            "description": "Everything needed for the Q4 release.",
+            "name": "Q4 Launch"
+          }
+        ],
+        "properties": {
+          "columns": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Column names, left to right. Defaults to To Do, In Progress, Done.",
+            "title": "Columns"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Markdown body.",
+            "title": "Description"
+          },
+          "name": {
+            "description": "Board name.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "BoardCreate",
+        "type": "object"
+      },
+      "BoardDetail": {
+        "examples": [
+          {
+            "created_at": "2026-10-30T09:00:00Z",
+            "created_by": "5d0c3b1e-7a52-4f5e-9d54-0c8f0a5e1a11",
+            "description": "Everything needed for the Q4 release.",
+            "id": "3f2a8c1e-5b7d-4e9a-9d1f-2b3c4d5e6f70",
+            "is_archived": false,
+            "name": "Q4 Launch",
+            "updated_at": "2026-10-30T09:00:00Z"
+          }
+        ],
+        "properties": {
+          "columns": {
+            "description": "The board's columns in order.",
+            "items": {
+              "$ref": "#/components/schemas/ColumnRead"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "created_at": {
+            "description": "Creation time (UTC).",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User who created the board.",
+            "title": "Created By"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Markdown body.",
+            "title": "Description"
+          },
+          "id": {
+            "description": "Board id.",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_archived": {
+            "description": "Archived boards are read-only and hidden by default.",
+            "title": "Is Archived",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "Board name.",
+            "title": "Name",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "Last change time (UTC).",
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "is_archived",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "columns"
+        ],
+        "title": "BoardDetail",
+        "type": "object"
+      },
+      "BoardRead": {
+        "examples": [
+          {
+            "created_at": "2026-10-30T09:00:00Z",
+            "created_by": "5d0c3b1e-7a52-4f5e-9d54-0c8f0a5e1a11",
+            "description": "Everything needed for the Q4 release.",
+            "id": "3f2a8c1e-5b7d-4e9a-9d1f-2b3c4d5e6f70",
+            "is_archived": false,
+            "name": "Q4 Launch",
+            "updated_at": "2026-10-30T09:00:00Z"
+          }
+        ],
+        "properties": {
+          "created_at": {
+            "description": "Creation time (UTC).",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User who created the board.",
+            "title": "Created By"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Markdown body.",
+            "title": "Description"
+          },
+          "id": {
+            "description": "Board id.",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_archived": {
+            "description": "Archived boards are read-only and hidden by default.",
+            "title": "Is Archived",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "Board name.",
+            "title": "Name",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "Last change time (UTC).",
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "is_archived",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "BoardRead",
+        "type": "object"
+      },
+      "BoardUpdate": {
+        "examples": [
+          {
+            "is_archived": false,
+            "name": "Q4 Launch (final)"
+          }
+        ],
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New description; send null to clear it.",
+            "title": "Description"
+          },
+          "is_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Archive or restore the board. Archiving is also DELETE.",
+            "title": "Is Archived"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New name.",
+            "title": "Name"
+          }
+        },
+        "title": "BoardUpdate",
+        "type": "object"
+      },
+      "ColumnCreate": {
+        "examples": [
+          {
+            "name": "Blocked",
+            "position": 2
+          }
+        ],
+        "properties": {
+          "name": {
+            "description": "Column name.",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "0-based slot to insert at. Defaults to the far right.",
+            "title": "Position"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ColumnCreate",
+        "type": "object"
+      },
+      "ColumnRead": {
+        "properties": {
+          "board_id": {
+            "description": "Board the column belongs to.",
+            "format": "uuid",
+            "title": "Board Id",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Creation time (UTC).",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "description": "Column id.",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "description": "Column name.",
+            "title": "Name",
+            "type": "string"
+          },
+          "position": {
+            "description": "0-based order from left to right.",
+            "title": "Position",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "board_id",
+          "name",
+          "position",
+          "created_at"
+        ],
+        "title": "ColumnRead",
+        "type": "object"
+      },
+      "ColumnUpdate": {
+        "examples": [
+          {
+            "name": "Blocked",
+            "position": 0
+          }
+        ],
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New name.",
+            "title": "Name"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New 0-based slot. Other columns shift to make room.",
+            "title": "Position"
+          }
+        },
+        "title": "ColumnUpdate",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "description": "Stable machine-readable code, e.g. TASK_NOT_FOUND",
+            "examples": [
+              "TASK_NOT_FOUND"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "description": "Human-readable message",
+            "examples": [
+              "Task not found"
+            ],
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "description": "Correlates with server logs and audit rows",
+            "examples": [
+              "req_8f3a2c"
+            ],
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "HealthStatus": {
+        "examples": [
+          {
+            "status": "ok"
+          }
+        ],
+        "properties": {
+          "status": {
+            "const": "ok",
+            "description": "Always `ok` when the process is serving requests.",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthStatus",
+        "type": "object"
+      },
+      "InvitationCreate": {
+        "examples": [
+          {
+            "email": "grace@acme.example",
+            "role": "member"
+          }
+        ],
+        "properties": {
+          "email": {
+            "description": "Address to invite. Stored lowercased.",
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role",
+            "default": "member",
+            "description": "Role the invitee receives on joining."
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "InvitationCreate",
+        "type": "object"
+      },
+      "InvitationRead": {
+        "examples": [
+          {
+            "created_at": "2026-10-30T09:00:00Z",
+            "email": "grace@acme.example",
+            "expires_at": "2026-11-06T09:00:00Z",
+            "id": "7c1d5e0a-3b2f-4a6d-8c9e-0f1a2b3c4d5e",
+            "role": "member"
+          }
+        ],
+        "properties": {
+          "created_at": {
+            "description": "When the invitation was created (UTC).",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "description": "Invited address.",
+            "title": "Email",
+            "type": "string"
+          },
+          "expires_at": {
+            "description": "After this the link stops working (UTC).",
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "description": "Invitation id.",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role",
+            "description": "Role the invitee will receive."
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "expires_at",
+          "created_at"
+        ],
+        "title": "InvitationRead",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "examples": [
+          {
+            "email": "ada@acme.example",
+            "password": "correct horse battery staple"
+          }
+        ],
+        "properties": {
+          "email": {
+            "description": "Login email (case-insensitive).",
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "description": "Account password.",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
+      "MeResponse": {
+        "examples": [
+          {
+            "active_organization": {
+              "id": "0b7c1f2e-9a3d-4c5b-8e7f-1a2b3c4d5e6f",
+              "name": "Acme Inc",
+              "role": "admin",
+              "slug": "acme-inc-a1b2c3"
+            },
+            "organizations": [
+              {
+                "id": "0b7c1f2e-9a3d-4c5b-8e7f-1a2b3c4d5e6f",
+                "name": "Acme Inc",
+                "role": "admin",
+                "slug": "acme-inc-a1b2c3"
+              }
+            ],
+            "user": {
+              "email": "ada@acme.example",
+              "full_name": "Ada Lovelace",
+              "id": "5d0c3b1e-7a52-4f5e-9d54-0c8f0a5e1a11"
+            }
+          }
+        ],
+        "properties": {
+          "active_organization": {
+            "$ref": "#/components/schemas/OrganizationSummary",
+            "description": "Organization the access token is scoped to."
+          },
+          "organizations": {
+            "description": "Every organization the user belongs to, for the org switcher.",
+            "items": {
+              "$ref": "#/components/schemas/OrganizationSummary"
+            },
+            "title": "Organizations",
+            "type": "array"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserRead",
+            "description": "The authenticated user."
+          }
+        },
+        "required": [
+          "user",
+          "active_organization",
+          "organizations"
+        ],
+        "title": "MeResponse",
+        "type": "object"
+      },
+      "MemberRead": {
+        "examples": [
+          {
+            "email": "ada@acme.example",
+            "full_name": "Ada Lovelace",
+            "joined_at": "2026-10-30T09:00:00Z",
+            "role": "admin",
+            "user_id": "5d0c3b1e-7a52-4f5e-9d54-0c8f0a5e1a11"
+          }
+        ],
+        "properties": {
+          "email": {
+            "description": "Login email.",
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "description": "Display name.",
+            "title": "Full Name",
+            "type": "string"
+          },
+          "joined_at": {
+            "description": "When the user joined the organization (UTC).",
+            "format": "date-time",
+            "title": "Joined At",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role",
+            "description": "Role in this organization."
+          },
+          "user_id": {
+            "description": "User id.",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "email",
+          "full_name",
+          "role",
+          "joined_at"
+        ],
+        "title": "MemberRead",
+        "type": "object"
+      },
+      "MemberRoleUpdate": {
+        "examples": [
+          {
+            "role": "manager"
+          }
+        ],
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/Role",
+            "description": "New role. The last admin cannot be demoted."
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "MemberRoleUpdate",
+        "type": "object"
+      },
+      "OrganizationRead": {
+        "examples": [
+          {
+            "created_at": "2026-10-30T09:00:00Z",
+            "id": "0b7c1f2e-9a3d-4c5b-8e7f-1a2b3c4d5e6f",
+            "name": "Acme Inc",
+            "slug": "acme-inc-a1b2c3"
+          }
+        ],
+        "properties": {
+          "created_at": {
+            "description": "When the organization was created (UTC).",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "description": "Organization id.",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "description": "Organization name.",
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "description": "URL-safe unique name. Fixed at creation.",
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "created_at"
+        ],
+        "title": "OrganizationRead",
+        "type": "object"
+      },
+      "OrganizationSummary": {
+        "properties": {
+          "id": {
+            "description": "Organization id.",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "description": "Organization name.",
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role",
+            "description": "Caller's role in this organization."
+          },
+          "slug": {
+            "description": "URL-safe unique name.",
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "role"
+        ],
+        "title": "OrganizationSummary",
+        "type": "object"
+      },
+      "OrganizationUpdate": {
+        "examples": [
+          {
+            "name": "Acme Corporation"
+          }
+        ],
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New organization name.",
+            "title": "Name"
+          }
+        },
+        "title": "OrganizationUpdate",
+        "type": "object"
+      },
+      "Page_BoardRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BoardRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pass as `cursor` to fetch the next page. Null on the last page.",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[BoardRead]",
+        "type": "object"
+      },
+      "Page_MemberRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MemberRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pass as `cursor` to fetch the next page. Null on the last page.",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[MemberRead]",
+        "type": "object"
+      },
+      "Page_TaskRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TaskRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pass as `cursor` to fetch the next page. Null on the last page.",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[TaskRead]",
+        "type": "object"
+      },
+      "Priority": {
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "urgent"
+        ],
+        "title": "Priority",
+        "type": "string"
+      },
+      "ReadinessStatus": {
+        "examples": [
+          {
+            "checks": {
+              "database": "ok",
+              "redis": "ok"
+            },
+            "status": "ok"
+          }
+        ],
+        "properties": {
+          "checks": {
+            "additionalProperties": {
+              "enum": [
+                "ok",
+                "error"
+              ],
+              "type": "string"
+            },
+            "description": "Per-dependency state: `ok` or `error`.",
+            "title": "Checks",
+            "type": "object"
+          },
+          "status": {
+            "description": "`ok` when every dependency is reachable, otherwise `unavailable`.",
+            "enum": [
+              "ok",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "checks"
+        ],
+        "title": "ReadinessStatus",
+        "type": "object"
+      },
+      "Role": {
+        "enum": [
+          "admin",
+          "manager",
+          "member"
+        ],
+        "title": "Role",
+        "type": "string"
+      },
+      "SignupRequest": {
+        "examples": [
+          {
+            "email": "ada@acme.example",
+            "full_name": "Ada Lovelace",
+            "organization_name": "Acme Inc",
+            "password": "correct horse battery staple"
+          }
+        ],
+        "properties": {
+          "email": {
+            "description": "Login email. Stored lowercased and must be unique.",
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "description": "Display name of the user.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Full Name",
+            "type": "string"
+          },
+          "organization_name": {
+            "description": "Name of the new organization.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "password": {
+            "description": "At least 12 characters.",
+            "maxLength": 128,
+            "minLength": 12,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organization_name",
+          "email",
+          "password",
+          "full_name"
+        ],
+        "title": "SignupRequest",
+        "type": "object"
+      },
+      "SwitchOrganizationRequest": {
+        "examples": [
+          {
+            "organization_id": "0b7c1f2e-9a3d-4c5b-8e7f-1a2b3c4d5e6f"
+          }
+        ],
+        "properties": {
+          "organization_id": {
+            "description": "Organization to make active. The caller must be a member.",
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organization_id"
+        ],
+        "title": "SwitchOrganizationRequest",
+        "type": "object"
+      },
+      "TaskCreate": {
+        "examples": [
+          {
+            "assignee_id": "0b7c1f2e-9a3d-4c5b-8e7f-1a2b3c4d5e6f",
+            "description": "Include revenue forecast and hiring plan.",
+            "due_date": "2026-11-15",
+            "priority": "high",
+            "title": "Prepare Q4 board deck"
+          }
+        ],
+        "properties": {
+          "assignee_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Must be a member of the same organization.",
+            "title": "Assignee Id"
+          },
+          "column_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Column to create the task in. Defaults to the first column.",
+            "title": "Column Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Markdown body.",
+            "title": "Description"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ISO 8601 date (YYYY-MM-DD).",
+            "title": "Due Date"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority",
+            "default": "medium",
+            "description": "Task priority."
+          },
+          "title": {
+            "description": "Short task title.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "TaskCreate",
+        "type": "object"
+      },
+      "TaskMove": {
+        "examples": [
+          {
+            "column_id": "9a1b2c3d-4e5f-4a6b-8c7d-0e1f2a3b4c5d",
+            "position": 0
+          }
+        ],
+        "properties": {
+          "column_id": {
+            "description": "Target column. Must belong to the task's board.",
+            "format": "uuid",
+            "title": "Column Id",
+            "type": "string"
+          },
+          "position": {
+            "description": "0-based slot in the target column. Values past the end go last.",
+            "minimum": 0.0,
+            "title": "Position",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "column_id",
+          "position"
+        ],
+        "title": "TaskMove",
+        "type": "object"
+      },
+      "TaskRead": {
+        "examples": [
+          {
+            "assignee_id": "0b7c1f2e-9a3d-4c5b-8e7f-1a2b3c4d5e6f",
+            "board_id": "3f2a8c1e-5b7d-4e9a-9d1f-2b3c4d5e6f70",
+            "column_id": "9a1b2c3d-4e5f-4a6b-8c7d-0e1f2a3b4c5d",
+            "created_at": "2026-10-30T09:00:00Z",
+            "created_by": "5d0c3b1e-7a52-4f5e-9d54-0c8f0a5e1a11",
+            "description": "Include revenue forecast and hiring plan.",
+            "due_date": "2026-11-15",
+            "id": "7c1d5e0a-3b2f-4a6d-8c9e-0f1a2b3c4d5e",
+            "position": 0,
+            "priority": "high",
+            "title": "Prepare Q4 board deck",
+            "updated_at": "2026-10-30T09:00:00Z"
+          }
+        ],
+        "properties": {
+          "assignee_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Assigned member, if any.",
+            "title": "Assignee Id"
+          },
+          "board_id": {
+            "description": "Board the task is on.",
+            "format": "uuid",
+            "title": "Board Id",
+            "type": "string"
+          },
+          "column_id": {
+            "description": "Column the task is in.",
+            "format": "uuid",
+            "title": "Column Id",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Creation time (UTC).",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User who created the task.",
+            "title": "Created By"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Markdown body.",
+            "title": "Description"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Due date, if any.",
+            "title": "Due Date"
+          },
+          "id": {
+            "description": "Task id.",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "description": "0-based order within the column.",
+            "title": "Position",
+            "type": "integer"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority",
+            "description": "Task priority."
+          },
+          "title": {
+            "description": "Short task title.",
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "Last change time (UTC).",
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "board_id",
+          "column_id",
+          "title",
+          "description",
+          "priority",
+          "position",
+          "assignee_id",
+          "due_date",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TaskRead",
+        "type": "object"
+      },
+      "TaskUpdate": {
+        "description": "Partial update. Omitted fields are untouched; `null` clears description, assignee, date.",
+        "examples": [
+          {
+            "priority": "urgent",
+            "title": "Prepare Q4 board deck v2"
+          }
+        ],
+        "properties": {
+          "assignee_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New assignee (admins and managers only); null unassigns.",
+            "title": "Assignee Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New body.",
+            "title": "Description"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New due date; null clears it.",
+            "title": "Due Date"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Priority"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New priority."
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New title.",
+            "title": "Title"
+          }
+        },
+        "title": "TaskUpdate",
+        "type": "object"
+      },
+      "TokenResponse": {
+        "examples": [
+          {
+            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "expires_in": 900,
+            "organization_id": "0b7c1f2e-9a3d-4c5b-8e7f-1a2b3c4d5e6f",
+            "role": "admin",
+            "token_type": "bearer"
+          }
+        ],
+        "properties": {
+          "access_token": {
+            "description": "Short-lived JWT. Send as `Authorization: Bearer`.",
+            "title": "Access Token",
+            "type": "string"
+          },
+          "expires_in": {
+            "description": "Access token lifetime in seconds.",
+            "title": "Expires In",
+            "type": "integer"
+          },
+          "organization_id": {
+            "description": "Organization the token is scoped to.",
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role",
+            "description": "Caller's role in that organization."
+          },
+          "token_type": {
+            "const": "bearer",
+            "description": "Always `bearer`.",
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "token_type",
+          "expires_in",
+          "organization_id",
+          "role"
+        ],
+        "title": "TokenResponse",
+        "type": "object"
+      },
+      "UserRead": {
+        "properties": {
+          "email": {
+            "description": "Login email.",
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "description": "Display name.",
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "description": "User id.",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "full_name"
+        ],
+        "title": "UserRead",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "description": "Access token from `POST /api/v1/auth/login` or `/auth/refresh`. Expires after 15 minutes.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "support@example.com",
+      "name": "TaskFlow Team"
+    },
+    "description": "REST API for organizations, role-based boards and tasks, comments, and audit logs.\n\n**Authentication:** call `POST /api/v1/auth/login`, copy the `access_token`, and paste it into the Authorize dialog. Access tokens expire after 15 minutes; use `POST /api/v1/auth/refresh` to rotate them.\n\n**Tenancy:** the active organization is embedded in the access token. Use `POST /api/v1/auth/switch-org` to change it.\n\n**Errors:** every error, including validation failures (`422`), uses the envelope `{\"error\": {\"code\", \"message\", \"request_id\"}}`.",
+    "license": {
+      "name": "MIT"
+    },
+    "summary": "Multi-tenant task management platform",
+    "title": "TaskFlow API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Verifies the credentials and returns an access token for the user's first organization. Use `POST /api/v1/auth/switch-org` to change organization.\n\n**Roles:** public.\n\nAn unknown email, a wrong password and a disabled account all return the same `401 INVALID_CREDENTIALS` response.\n\nThe refresh token is set in an `HttpOnly`, `SameSite=Strict` cookie scoped to `/api/v1/auth`; it is never returned in the body. Swagger UI sends it automatically when served from the same origin as the API.",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid email or password"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Account belongs to no organization"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "summary": "Log in with email and password",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "Revokes the refresh token family of the cookie and clears the cookie. Always returns 204, even when the cookie is missing or unknown.\n\n**Roles:** public.",
+        "operationId": "logout",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "summary": "Log out",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "description": "Returns the authenticated user, the organization the token is scoped to, and every organization the user belongs to.\n\n**Roles:** any authenticated user.",
+        "operationId": "get_current_account",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get the current user and organizations",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "Exchanges the refresh cookie for a new access token and a new refresh cookie. Each refresh token works once.\n\n**Roles:** any holder of a valid refresh cookie.\n\n**Reuse detection:** presenting an already-rotated or revoked token revokes the whole token family and returns 401, so a stolen token cannot be used silently.\n\nThe refresh token is set in an `HttpOnly`, `SameSite=Strict` cookie scoped to `/api/v1/auth`; it is never returned in the body. Swagger UI sends it automatically when served from the same origin as the API.",
+        "operationId": "refresh_token",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Refresh cookie missing, expired or reused"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "summary": "Rotate the refresh token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/signup": {
+      "post": {
+        "description": "Creates a user, a new organization, and an admin membership, then signs the user in.\n\n**Roles:** public.\n\nThe refresh token is set in an `HttpOnly`, `SameSite=Strict` cookie scoped to `/api/v1/auth`; it is never returned in the body. Swagger UI sends it automatically when served from the same origin as the API.\n\n**Audit:** `org.created` and `auth.login` entries arrive with the audit log (Phase 5).",
+        "operationId": "signup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Email is already registered"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "summary": "Sign up and create an organization",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/switch-org": {
+      "post": {
+        "description": "Issues a new access token (and a new refresh cookie) scoped to another organization the caller belongs to. The previous session's refresh token family is revoked.\n\n**Roles:** any member of the target organization.\n\nReturns 404 both when the organization does not exist and when the caller is not a member, so existence is not revealed.\n\nThe refresh token is set in an `HttpOnly`, `SameSite=Strict` cookie scoped to `/api/v1/auth`; it is never returned in the body. Swagger UI sends it automatically when served from the same origin as the API.",
+        "operationId": "switch_organization",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchOrganizationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Organization not found for this user"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Switch the active organization",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/boards": {
+      "get": {
+        "description": "Boards of the active organization, oldest first, with cursor pagination. Archived boards are hidden unless `include_archived` is true.\n\n**Roles:** Admin, Manager, Member.",
+        "operationId": "list_boards",
+        "parameters": [
+          {
+            "description": "Also return archived boards.",
+            "in": "query",
+            "name": "include_archived",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Also return archived boards.",
+              "title": "Include Archived",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Page size.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Page size.",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "`next_cursor` of the last page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`next_cursor` of the last page.",
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_BoardRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List boards",
+        "tags": [
+          "boards"
+        ]
+      },
+      "post": {
+        "description": "Creates a board with its columns (To Do, In Progress and Done unless `columns` is given).\n\n**Roles:** Admin, Manager.\n\n**Audit:** will write `board.created` once the audit log exists (Phase 5).",
+        "operationId": "create_board",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create a board",
+        "tags": [
+          "boards"
+        ]
+      }
+    },
+    "/api/v1/boards/{board_id}": {
+      "delete": {
+        "description": "Archives the board: it becomes read-only and is hidden from the default list. Nothing is deleted, and archiving an archived board succeeds. Restore with `PATCH` `is_archived: false`.\n\n**Roles:** Admin, Manager.\n\n**Audit:** will write `board.archived` (Phase 5).",
+        "operationId": "archive_board",
+        "parameters": [
+          {
+            "description": "Board id.",
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "description": "Board id.",
+              "format": "uuid",
+              "title": "Board Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Board not found in the active organization"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Archive a board",
+        "tags": [
+          "boards"
+        ]
+      },
+      "get": {
+        "description": "**Roles:** Admin, Manager, Member.",
+        "operationId": "get_board",
+        "parameters": [
+          {
+            "description": "Board id.",
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "description": "Board id.",
+              "format": "uuid",
+              "title": "Board Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Board not found in the active organization"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get a board with its columns",
+        "tags": [
+          "boards"
+        ]
+      },
+      "patch": {
+        "description": "Renames the board, changes its description, or archives and restores it. Omitted fields are unchanged.\n\n**Roles:** Admin, Manager.\n\n**Audit:** will write `board.updated` or `board.archived` (Phase 5).",
+        "operationId": "update_board",
+        "parameters": [
+          {
+            "description": "Board id.",
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "description": "Board id.",
+              "format": "uuid",
+              "title": "Board Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Board not found in the active organization"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update a board",
+        "tags": [
+          "boards"
+        ]
+      }
+    },
+    "/api/v1/boards/{board_id}/columns": {
+      "post": {
+        "description": "Adds a column at `position`, or at the far right. Later columns shift right.\n\n**Roles:** Admin, Manager.",
+        "operationId": "create_column",
+        "parameters": [
+          {
+            "description": "Board id.",
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "description": "Board id.",
+              "format": "uuid",
+              "title": "Board Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ColumnCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColumnRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Board not found in the active organization"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The board is archived"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Add a column to a board",
+        "tags": [
+          "boards"
+        ]
+      }
+    },
+    "/api/v1/boards/{board_id}/tasks": {
+      "get": {
+        "description": "Live tasks in board order (column, then position), with cursor pagination. Filters combine with AND.\n\n**Roles:** Admin, Manager, Member.",
+        "operationId": "list_tasks",
+        "parameters": [
+          {
+            "description": "Board id.",
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "description": "Board id.",
+              "format": "uuid",
+              "title": "Board Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only tasks in this column.",
+            "in": "query",
+            "name": "column_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tasks in this column.",
+              "title": "Column Id"
+            }
+          },
+          {
+            "description": "Only tasks assigned to this user.",
+            "in": "query",
+            "name": "assignee_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tasks assigned to this user.",
+              "title": "Assignee Id"
+            }
+          },
+          {
+            "description": "Only tasks with this priority.",
+            "in": "query",
+            "name": "priority",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Priority"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tasks with this priority.",
+              "title": "Priority"
+            }
+          },
+          {
+            "description": "Page size.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Page size.",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "`next_cursor` of the last page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`next_cursor` of the last page.",
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_TaskRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Board not found in the active organization"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List the tasks on a board",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "post": {
+        "description": "Creates a task at the bottom of `column_id`, or of the board's first column.\n\n**Roles:** Admin, Manager, Member. A member may assign the task only to themselves or leave it unassigned.\n\n**Idempotency:** send the same `Idempotency-Key` within 24 hours to receive the original response (with `Idempotent-Replay: true`) instead of creating a duplicate. Reusing a key with a different body returns 409.\n\n**Audit:** will write `task.created` (Phase 5).",
+        "operationId": "create_task",
+        "parameters": [
+          {
+            "description": "Board id.",
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "description": "Board id.",
+              "format": "uuid",
+              "title": "Board Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Unique key (max 128 chars) that makes retries safe: repeating the request within 24 hours returns the original response instead of creating a duplicate.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Unique key (max 128 chars) that makes retries safe: repeating the request within 24 hours returns the original response instead of creating a duplicate.",
+              "examples": [
+                "6f1c2a8e-4b7d-4e9a-9d1f-2b3c4d5e6f70"
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Board not found in the active organization"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Board archived or without columns, or the Idempotency-Key was reused with a different request or is still in progress"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Idempotency checks are unavailable (only when the header is sent)"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create a task",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/api/v1/columns/{column_id}": {
+      "delete": {
+        "description": "Deletes the column and closes the gap. A column that still holds tasks is refused with 409; move or delete its tasks first.\n\n**Roles:** Admin, Manager.",
+        "operationId": "delete_column",
+        "parameters": [
+          {
+            "description": "Column id.",
+            "in": "path",
+            "name": "column_id",
+            "required": true,
+            "schema": {
+              "description": "Column id.",
+              "format": "uuid",
+              "title": "Column Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Column not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The column still has tasks, or the board is archived"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete an empty column",
+        "tags": [
+          "boards"
+        ]
+      },
+      "patch": {
+        "description": "Renames the column and/or moves it to `position`; the other columns shift to make room.\n\n**Roles:** Admin, Manager.",
+        "operationId": "update_column",
+        "parameters": [
+          {
+            "description": "Column id.",
+            "in": "path",
+            "name": "column_id",
+            "required": true,
+            "schema": {
+              "description": "Column id.",
+              "format": "uuid",
+              "title": "Column Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ColumnUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColumnRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Column not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The board is archived"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Rename or reorder a column",
+        "tags": [
+          "boards"
+        ]
+      }
+    },
+    "/api/v1/org": {
+      "get": {
+        "description": "Returns the organization the access token is scoped to.\n\n**Roles:** Admin, Manager, Member.",
+        "operationId": "get_organization",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get the active organization",
+        "tags": [
+          "organization"
+        ]
+      },
+      "patch": {
+        "description": "Renames the active organization. Omitted fields are left unchanged.\n\n**Roles:** Admin.\n\n**Audit:** will write `org.updated` once the audit log exists (Phase 5).",
+        "operationId": "update_organization",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update organization settings",
+        "tags": [
+          "organization"
+        ]
+      }
+    },
+    "/api/v1/org/invitations": {
+      "post": {
+        "description": "Creates a single-use invitation valid for 7 days and emails the link. Inviting an address again replaces its pending invitation. The link is never returned in the response. With `EMAIL_BACKEND=console` it is printed to the server output.\n\n**Roles:** Admin.\n\n**Audit:** will write `member.invited` once the audit log exists (Phase 5).",
+        "operationId": "create_invitation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The address already belongs to a member of this organization"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Invite someone to the organization",
+        "tags": [
+          "organization"
+        ]
+      }
+    },
+    "/api/v1/org/invitations/{token}/accept": {
+      "post": {
+        "description": "Redeems the emailed token, adds the user to the organization with the invited role, and signs them in to it.\n\n**Roles:** public; the token is the credential.\n\nNew addresses create an account (`full_name` and a password of at least 12 characters are required). Existing accounts must supply their current password. The token works once; unknown, expired and used tokens all return the same 404.\n\nThe refresh token is set in an `HttpOnly`, `SameSite=Strict` cookie scoped to `/api/v1/auth`; it is never returned in the body. Swagger UI sends it automatically when served from the same origin as the API.\n\n**Audit:** will write `member.joined` once the audit log exists (Phase 5).",
+        "operationId": "accept_invitation",
+        "parameters": [
+          {
+            "description": "Token from the invitation email.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "description": "Token from the invitation email.",
+              "maxLength": 200,
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInvitationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Existing account: wrong password"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invitation is invalid, expired or already used"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The user is already a member of the organization"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "summary": "Accept an invitation",
+        "tags": [
+          "organization"
+        ]
+      }
+    },
+    "/api/v1/org/members": {
+      "get": {
+        "description": "Members of the active organization, oldest first, with cursor pagination.\n\n**Roles:** Admin, Manager, Member.",
+        "operationId": "list_members",
+        "parameters": [
+          {
+            "description": "Page size.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Page size.",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "`next_cursor` from the previous page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`next_cursor` from the previous page.",
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_MemberRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List organization members",
+        "tags": [
+          "organization"
+        ]
+      }
+    },
+    "/api/v1/org/members/{user_id}": {
+      "delete": {
+        "description": "Removes the member and ends their sessions in this organization. The last admin cannot be removed, including by themselves.\n\n**Roles:** Admin.\n\n**Audit:** will write `member.removed` once the audit log exists (Phase 5).",
+        "operationId": "remove_member",
+        "parameters": [
+          {
+            "description": "Id of the member's user account.",
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "description": "Id of the member's user account.",
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No such member in the active organization"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Would leave the organization without an admin"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Remove a member",
+        "tags": [
+          "organization"
+        ]
+      },
+      "patch": {
+        "description": "Sets the member's role. The last admin of an organization cannot be demoted.\n\n**Roles:** Admin.\n\n**Audit:** will write `member.role_changed` once the audit log exists (Phase 5).",
+        "operationId": "change_member_role",
+        "parameters": [
+          {
+            "description": "Id of the member's user account.",
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "description": "Id of the member's user account.",
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRoleUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No such member in the active organization"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Would leave the organization without an admin"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Change a member's role",
+        "tags": [
+          "organization"
+        ]
+      }
+    },
+    "/api/v1/tasks/{task_id}": {
+      "delete": {
+        "description": "Soft-deletes the task: it disappears from every list and lookup, and the tasks below it move up.\n\n**Roles:** Admin, Manager.\n\n**Audit:** will write `task.deleted` (Phase 5).",
+        "operationId": "delete_task",
+        "parameters": [
+          {
+            "description": "Task id.",
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "description": "Task id.",
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Task not found in the active organization"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The board is archived"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete a task",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "get": {
+        "description": "**Roles:** Admin, Manager, Member.",
+        "operationId": "get_task",
+        "parameters": [
+          {
+            "description": "Task id.",
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "description": "Task id.",
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Task not found in the active organization"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get a task",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "patch": {
+        "description": "Partial update; omitted fields are unchanged and `null` clears description, assignee and due date. Use `POST /tasks/{id}/move` to change column or order.\n\n**Roles:** Admins and managers can edit any task; a member can edit only tasks assigned to them. Only admins and managers can change the assignee.\n\n**Audit:** will write `task.updated` (Phase 5).",
+        "operationId": "update_task",
+        "parameters": [
+          {
+            "description": "Task id.",
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "description": "Task id.",
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Task not found in the active organization"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The board is archived"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update a task",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/api/v1/tasks/{task_id}/move": {
+      "post": {
+        "description": "Moves the task to `column_id` at 0-based `position` (past the end means last). The source and target columns are renumbered in one transaction, so a move either fully happens or not at all.\n\n**Roles:** Admins and managers can edit any task; a member can edit only tasks assigned to them.\n\n**Audit:** will write `task.moved` (Phase 5).",
+        "operationId": "move_task",
+        "parameters": [
+          {
+            "description": "Task id.",
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "description": "Task id.",
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskMove"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Task, or the target column on the task's board, not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The board is archived"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Move a task to a column and position",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Returns 200 while the process is running. Does not touch dependencies.",
+        "operationId": "health_live",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liveness probe",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "description": "Pings PostgreSQL and Redis. Returns 200 when both respond, or 503 with the same body shape when either fails.",
+        "operationId": "health_ready",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessStatus"
+                }
+              }
+            },
+            "description": "A dependency is unreachable"
+          }
+        },
+        "summary": "Readiness probe",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "Signup, login, token refresh, logout, and organization switching.",
+      "name": "auth"
+    },
+    {
+      "description": "Organization settings, members, and invitations.",
+      "name": "organization"
+    },
+    {
+      "description": "Boards and their columns.",
+      "name": "boards"
+    },
+    {
+      "description": "Task CRUD, filtering, and moving between columns.",
+      "name": "tasks"
+    },
+    {
+      "description": "Comments on tasks.",
+      "name": "comments"
+    },
+    {
+      "description": "Append-only activity log for compliance review.",
+      "name": "audit"
+    },
+    {
+      "description": "Liveness and readiness probes.",
+      "name": "health"
+    }
+  ]
+}

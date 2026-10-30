@@ -1,9 +1,12 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.error_handlers import register_error_handlers
 from app.api.v1 import audit, auth, boards, comments, health, organization, tasks
 from app.core.config import settings
+from app.core.logging import configure_logging
 from app.middleware.request_id import RequestIdMiddleware
+from app.middleware.security import AccessLogMiddleware, SecurityHeadersMiddleware
 
 TAGS_METADATA = [
     {
@@ -20,6 +23,7 @@ TAGS_METADATA = [
 
 
 def create_app(enable_docs: bool | None = None) -> FastAPI:
+    configure_logging(settings.log_level, as_json=settings.log_json)
     docs_on = settings.enable_docs if enable_docs is None else enable_docs
     app = FastAPI(
         title="TaskFlow API",
@@ -48,7 +52,25 @@ def create_app(enable_docs: bool | None = None) -> FastAPI:
             "displayRequestDuration": True,
         },
     )
+    # Added innermost-first: CORS wraps security headers wraps request id wraps the access log.
+    app.add_middleware(AccessLogMiddleware)
     app.add_middleware(RequestIdMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[settings.frontend_origin],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Request-ID"],
+        expose_headers=[
+            "X-Request-ID",
+            "Retry-After",
+            "X-RateLimit-Limit",
+            "X-RateLimit-Remaining",
+            "Idempotent-Replay",
+        ],
+        max_age=600,
+    )
     register_error_handlers(app)
     app.include_router(auth.router)
     app.include_router(organization.router)

@@ -8,6 +8,7 @@ from app.api.deps import (
     EmailSenderDep,
     TenantSession,
     get_client_info,
+    ip_rate_limit,
     require_permission,
 )
 from app.api.responses import FORBIDDEN, RATE_LIMITED, UNAUTHORIZED, VALIDATION, error
@@ -148,6 +149,7 @@ async def create_invitation(
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
     operation_id="accept_invitation",
+    dependencies=[Depends(ip_rate_limit("accept-invite", "rate_limit_login_per_ip"))],
     summary="Accept an invitation",
     description=(
         "Redeems the emailed token, adds the user to the organization with the invited role, "

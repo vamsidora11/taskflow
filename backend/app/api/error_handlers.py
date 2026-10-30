@@ -39,8 +39,10 @@ def error_response(
 
 async def app_error_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, AppError)
-    headers = {"WWW-Authenticate": "Bearer"} if exc.status_code == 401 else None
-    return error_response(request, exc.status_code, exc.code, exc.message, headers)
+    headers = dict(getattr(exc, "headers", None) or {})
+    if exc.status_code == 401:
+        headers["WWW-Authenticate"] = "Bearer"
+    return error_response(request, exc.status_code, exc.code, exc.message, headers or None)
 
 
 async def http_exception_handler(request: Request, exc: Exception) -> JSONResponse:

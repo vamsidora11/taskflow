@@ -7,8 +7,10 @@ from fastapi.security import HTTPAuthorizationCredentials
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import PermissionDeniedError
+from app.core.config import settings
+from app.core.exceptions import PermissionDeniedError, RateLimitedError
 from app.core.permissions import Permission, has_permission
+from app.core.rate_limit import RateLimiter, parse_limit
 from app.core.security import AccessTokenClaims, decode_access_token
 from app.core.security_scheme import bearer_scheme
 from app.db.redis import get_redis
@@ -52,13 +54,6 @@ async def get_auth_session(
 AuthSession = Annotated[AsyncSession, Depends(get_auth_session, scope="function")]
 
 
-def get_client_info(request: Request) -> ClientInfo:
-    return ClientInfo(
-        user_agent=request.headers.get("user-agent"),
-        ip_address=request.client.host if request.client else None,
-    )
-
-
 async def get_token_claims(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> AccessTokenClaims:
@@ -67,9 +62,79 @@ async def get_token_claims(
     return decode_access_token(credentials.credentials)
 
 
+def get_redis_client() -> Redis:
+    """Overridable in tests to use an in-memory or throwaway Redis."""
+    return get_redis()
+
+
+def get_rate_limiter(redis: Redis = Depends(get_redis_client)) -> RateLimiter:
+    return RateLimiter(redis)
+
+
+Limiter = Annotated[RateLimiter, Depends(get_rate_limiter)]
+
+
+async def enforce_rate_limit(
+    limiter: RateLimiter, request: Request, scope: str, identity: str, spec: str
+) -> None:
+    """Count one hit and raise 429 once the budget is spent.
+
+    The tightest budget seen so far is kept on the request; the security-headers middleware turns
+    it into X-RateLimit-* headers on every response, error responses included (headers set on a
+    route's injected Response are dropped when the route raises).
+    """
+    limit = parse_limit(spec)
+    result = await limiter.hit(scope, identity, limit)
+    if result.degraded:  # Redis down: fail open, nothing to advertise
+        return
+    current = getattr(request.state, "rate_limit", None)
+    if current is None or result.remaining < current[1]:
+        request.state.rate_limit = (result.limit, result.remaining)
+    if not result.allowed:
+        raise RateLimitedError(retry_after=result.retry_after, limit=result.limit)
+
+
+def ip_rate_limit(scope: str, setting_name: str) -> Callable[..., Awaitable[None]]:
+    """Dependency factory: per-client-IP limit read from settings at request time."""
+
+    async def dependency(request: Request, limiter: Limiter) -> None:
+        ip = request.client.host if request.client else "unknown"
+        await enforce_rate_limit(limiter, request, scope, ip, getattr(settings, setting_name))
+
+    return dependency
+
+
+_WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+
+async def enforce_user_rate_limit(
+    request: Request,
+    claims: AccessTokenClaims = Depends(get_token_claims),
+    limiter: RateLimiter = Depends(get_rate_limiter),
+) -> None:
+    """Per-user budget for authenticated routes: writes and reads are counted separately."""
+    is_write = request.method in _WRITE_METHODS
+    await enforce_rate_limit(
+        limiter,
+        request,
+        "user-write" if is_write else "user-read",
+        str(claims.user_id),
+        settings.rate_limit_write_per_user if is_write else settings.rate_limit_read_per_user,
+    )
+
+
+def get_client_info(request: Request) -> ClientInfo:
+    return ClientInfo(
+        user_agent=request.headers.get("user-agent"),
+        ip_address=request.client.host if request.client else None,
+    )
+
+
 async def get_tenant_session(
+    request: Request,
     claims: AccessTokenClaims = Depends(get_token_claims),
     factory: SessionFactory = Depends(get_factory),
+    _rate_limit: None = Depends(enforce_user_rate_limit),
 ) -> AsyncIterator[AsyncSession]:
     """Session scoped to the token's organization for RLS.
 
@@ -77,6 +142,7 @@ async def get_tenant_session(
     tenant route is protected even if it never asks for the current user. The transaction
     commits (or rolls back) when the route returns.
     """
+    request.state.user_id = str(claims.user_id)  # for the access log
     async with tenant_session(factory, claims.org_id, claims.user_id) as session:
         session.info[_CURRENT_USER_KEY] = await resolve_authenticated_user(session, claims)
         yield session
@@ -112,11 +178,6 @@ def require_permission(
         return user
 
     return checker
-
-
-def get_redis_client() -> Redis:
-    """Overridable in tests to use an in-memory or throwaway Redis."""
-    return get_redis()
 
 
 def get_idempotency_store(redis: Redis = Depends(get_redis_client)) -> IdempotencyStore:

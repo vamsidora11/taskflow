@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     docs_basic_auth_user: str | None = None
     docs_basic_auth_password: str | None = None
     frontend_origin: str = "http://localhost:8080"
+    log_level: str = "INFO"
+    log_json: bool = Field(default=True, description="Structured JSON logs; false for plain text")
 
     database_url: str = "postgresql+asyncpg://app_user:change-me-app@localhost:5432/taskflow"
     migration_database_url: str = (
@@ -35,6 +37,7 @@ class Settings(BaseSettings):
     )
 
     rate_limit_login_per_ip: str = "10/minute"
+    rate_limit_signup_per_ip: str = "10/minute"
     rate_limit_login_per_email: str = "5/15minutes"
     rate_limit_refresh_per_ip: str = "30/minute"
     rate_limit_write_per_user: str = "120/minute"

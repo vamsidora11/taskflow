@@ -29,7 +29,7 @@ services:
     build: ./backend
     env_file: .env
     # Migrations run as the owner role (MIGRATION_DATABASE_URL); the API runs as app_user.
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=*"
     depends_on:
       postgres:
         condition: service_healthy

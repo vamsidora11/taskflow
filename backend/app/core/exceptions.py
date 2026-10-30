@@ -153,3 +153,17 @@ class CommentNotFoundError(AppError):
     status_code = 404
     code = "COMMENT_NOT_FOUND"
     message = "Comment not found"
+
+
+class RateLimitedError(AppError):
+    status_code = 429
+    code = "RATE_LIMITED"
+    message = "Too many requests; slow down and retry shortly"
+
+    def __init__(self, *, retry_after: int, limit: int) -> None:
+        super().__init__()
+        self.headers = {
+            "Retry-After": str(retry_after),
+            "X-RateLimit-Limit": str(limit),
+            "X-RateLimit-Remaining": "0",
+        }

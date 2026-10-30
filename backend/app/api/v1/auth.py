@@ -1,6 +1,14 @@
 from fastapi import APIRouter, Depends, Request, Response, status
 
-from app.api.deps import AuthSession, CurrentUser, TenantSession, get_client_info
+from app.api.deps import (
+    AuthSession,
+    CurrentUser,
+    Limiter,
+    TenantSession,
+    enforce_rate_limit,
+    get_client_info,
+    ip_rate_limit,
+)
 from app.api.responses import RATE_LIMITED, UNAUTHORIZED, VALIDATION
 from app.api.session_cookie import (
     COOKIE_NOTE,
@@ -30,6 +38,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
     response_model=TokenResponse,
     status_code=status.HTTP_201_CREATED,
     operation_id="signup",
+    dependencies=[Depends(ip_rate_limit("signup", "rate_limit_signup_per_ip"))],
     summary="Sign up and create an organization",
     description=(
         "Creates a user, a new organization, and an admin membership, then signs the user in.\n\n"
@@ -65,6 +74,7 @@ async def signup(
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
     operation_id="login",
+    dependencies=[Depends(ip_rate_limit("login-ip", "rate_limit_login_per_ip"))],
     summary="Log in with email and password",
     description=(
         "Verifies the credentials and returns an access token for the user's first "
@@ -83,10 +93,16 @@ async def signup(
 )
 async def login(
     payload: LoginRequest,
+    request: Request,
     response: Response,
     session: AuthSession,
+    limiter: Limiter,
     client: ClientInfo = Depends(get_client_info),
 ) -> TokenResponse:
+    # Per account as well as per IP, so a botnet cannot spread guesses at one victim.
+    await enforce_rate_limit(
+        limiter, request, "login-email", payload.email.lower(), settings.rate_limit_login_per_email
+    )
     tokens = await AuthService(session).login(
         email=payload.email, password=payload.password, client=client
     )
@@ -99,6 +115,7 @@ async def login(
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
     operation_id="refresh_token",
+    dependencies=[Depends(ip_rate_limit("refresh-ip", "rate_limit_refresh_per_ip"))],
     summary="Rotate the refresh token",
     description=(
         "Exchanges the refresh cookie for a new access token and a new refresh cookie. Each "

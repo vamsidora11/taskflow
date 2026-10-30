@@ -4,11 +4,14 @@ from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 
 import pytest
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from app.api.deps import get_factory
 from app.db.session import SessionFactory
+from app.main import create_app
 from tests.db_utils import DbUrls, drop_database, provision_database, server_available
 
 
@@ -48,6 +51,24 @@ async def app_engine(database: DbUrls) -> AsyncIterator[AsyncEngine]:
 @pytest.fixture
 def app_session_factory(app_engine: AsyncEngine) -> SessionFactory:
     return async_sessionmaker(app_engine, expire_on_commit=False)
+
+
+@pytest.fixture
+async def api(database: DbUrls) -> AsyncIterator[AsyncClient]:
+    """The real app wired to the test database as the non-owner runtime role.
+
+    https base URL so the Secure refresh cookie is stored and replayed like a browser would.
+    The pool has room for two connections because switch-org uses a tenant-scoped session and
+    an auth session in the same request.
+    """
+    engine = create_async_engine(database.app, pool_size=5, max_overflow=0)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    app = create_app()
+    app.dependency_overrides[get_factory] = lambda: factory
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="https://test") as client:
+        yield client
+    await engine.dispose()
 
 
 @dataclass(frozen=True)

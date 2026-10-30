@@ -31,6 +31,8 @@ EXPECTED: dict[Permission, set[Role]] = {
     Permission.TASK_DELETE: {A, M},
     # Comment on tasks
     Permission.COMMENT_CREATE: {A, M, U},
+    # Delete any comment (members may still delete their own: an ownership rule)
+    Permission.COMMENT_DELETE_ANY: {A, M},
     # View activity log
     Permission.AUDIT_VIEW: {A, M},
     # View boards and tasks (plus the organization and its member list)

@@ -36,6 +36,120 @@
         "title": "AcceptInvitationRequest",
         "type": "object"
       },
+      "AuditLogRead": {
+        "examples": [
+          {
+            "action": "task.updated",
+            "actor_user_id": "5d0c3b1e-7a52-4f5e-9d54-0c8f0a5e1a11",
+            "created_at": "2026-10-31T09:00:00Z",
+            "entity_id": "7c1d5e0a-3b2f-4a6d-8c9e-0f1a2b3c4d5e",
+            "entity_type": "task",
+            "id": 1042,
+            "ip_address": "203.0.113.7",
+            "metadata": {
+              "changes": {
+                "priority": {
+                  "from": "medium",
+                  "to": "urgent"
+                }
+              }
+            },
+            "request_id": "req_8f3a2c"
+          }
+        ],
+        "properties": {
+          "action": {
+            "description": "What happened, e.g. `task.updated`.",
+            "title": "Action",
+            "type": "string"
+          },
+          "actor_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Who did it; null for system events.",
+            "title": "Actor User Id"
+          },
+          "created_at": {
+            "description": "When it happened (UTC).",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Id of that thing, when there is one.",
+            "title": "Entity Id"
+          },
+          "entity_type": {
+            "description": "Kind of thing it happened to, e.g. `task`.",
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "id": {
+            "description": "Monotonic id; newer entries have larger ids.",
+            "title": "Id",
+            "type": "integer"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client address of the request.",
+            "title": "Ip Address"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "description": "Changed fields as `{field: {from, to}}` under `changes`, plus event details.",
+            "title": "Metadata",
+            "type": "object"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Matches `X-Request-ID` and the server logs.",
+            "title": "Request Id"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "entity_type",
+          "entity_id",
+          "actor_user_id",
+          "metadata",
+          "ip_address",
+          "request_id",
+          "created_at"
+        ],
+        "title": "AuditLogRead",
+        "type": "object"
+      },
       "BoardCreate": {
         "examples": [
           {
@@ -428,6 +542,93 @@
         "title": "ColumnUpdate",
         "type": "object"
       },
+      "CommentCreate": {
+        "examples": [
+          {
+            "body": "Looks good. Can we ship it Friday?"
+          }
+        ],
+        "properties": {
+          "body": {
+            "description": "Markdown comment text.",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "CommentCreate",
+        "type": "object"
+      },
+      "CommentRead": {
+        "examples": [
+          {
+            "author_id": "5d0c3b1e-7a52-4f5e-9d54-0c8f0a5e1a11",
+            "body": "Looks good. Can we ship it Friday?",
+            "created_at": "2026-10-31T09:00:00Z",
+            "id": "2b8f5d1c-6a3e-4f70-9c14-7d0e8a1b2c3d",
+            "task_id": "7c1d5e0a-3b2f-4a6d-8c9e-0f1a2b3c4d5e",
+            "updated_at": "2026-10-31T09:00:00Z"
+          }
+        ],
+        "properties": {
+          "author_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Author; null if the account was deleted.",
+            "title": "Author Id"
+          },
+          "body": {
+            "description": "Markdown comment text.",
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Creation time (UTC).",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "description": "Comment id.",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "task_id": {
+            "description": "Task the comment belongs to.",
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "Last change time (UTC).",
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "author_id",
+          "body",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CommentRead",
+        "type": "object"
+      },
       "ErrorDetail": {
         "properties": {
           "code": {
@@ -814,6 +1015,34 @@
         "title": "OrganizationUpdate",
         "type": "object"
       },
+      "Page_AuditLogRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditLogRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pass as `cursor` to fetch the next page. Null on the last page.",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[AuditLogRead]",
+        "type": "object"
+      },
       "Page_BoardRead_": {
         "properties": {
           "items": {
@@ -840,6 +1069,34 @@
           "items"
         ],
         "title": "Page[BoardRead]",
+        "type": "object"
+      },
+      "Page_CommentRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CommentRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pass as `cursor` to fetch the next page. Null on the last page.",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[CommentRead]",
         "type": "object"
       },
       "Page_MemberRead_": {
@@ -1441,6 +1698,203 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/audit-logs": {
+      "get": {
+        "description": "The organization's append-only audit trail, newest first, with cursor pagination. Filters combine with AND.\n\n**Roles:** Admin, Manager.",
+        "operationId": "list_audit_logs",
+        "parameters": [
+          {
+            "description": "Exact action, e.g. `task.moved`.",
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Exact action, e.g. `task.moved`.",
+              "title": "Action"
+            }
+          },
+          {
+            "description": "e.g. `task`, `member`.",
+            "in": "query",
+            "name": "entity_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "e.g. `task`, `member`.",
+              "title": "Entity Type"
+            }
+          },
+          {
+            "description": "Only entries by this user.",
+            "in": "query",
+            "name": "actor_user_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only entries by this user.",
+              "title": "Actor User Id"
+            }
+          },
+          {
+            "description": "Entries at or after this time.",
+            "in": "query",
+            "name": "created_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Entries at or after this time.",
+              "title": "Created From"
+            }
+          },
+          {
+            "description": "Entries at or before this time.",
+            "in": "query",
+            "name": "created_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Entries at or before this time.",
+              "title": "Created To"
+            }
+          },
+          {
+            "description": "Page size.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Page size.",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "`next_cursor` of the last page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`next_cursor` of the last page.",
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_AuditLogRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List the activity log",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "description": "Verifies the credentials and returns an access token for the user's first organization. Use `POST /api/v1/auth/switch-org` to change organization.\n\n**Roles:** public.\n\nAn unknown email, a wrong password and a disabled account all return the same `401 INVALID_CREDENTIALS` response.\n\nThe refresh token is set in an `HttpOnly`, `SameSite=Strict` cookie scoped to `/api/v1/auth`; it is never returned in the body. Swagger UI sends it automatically when served from the same origin as the API.",
@@ -2893,6 +3347,100 @@
         ]
       }
     },
+    "/api/v1/comments/{comment_id}": {
+      "delete": {
+        "description": "Soft-deletes the comment.\n\n**Roles:** the comment's author, or any Manager or Admin.\n\n**Audit:** writes a `comment.deleted` entry.",
+        "operationId": "delete_comment",
+        "parameters": [
+          {
+            "description": "Comment id.",
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "description": "Comment id.",
+              "format": "uuid",
+              "title": "Comment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Comment not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The task's board is archived"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete a comment",
+        "tags": [
+          "comments"
+        ]
+      }
+    },
     "/api/v1/org": {
       "get": {
         "description": "Returns the organization the access token is scoped to.\n\n**Roles:** Admin, Manager, Member.",
@@ -3812,6 +4360,239 @@
         "summary": "Update a task",
         "tags": [
           "tasks"
+        ]
+      }
+    },
+    "/api/v1/tasks/{task_id}/comments": {
+      "get": {
+        "description": "Oldest first, with cursor pagination.\n\n**Roles:** Admin, Manager, Member.",
+        "operationId": "list_comments",
+        "parameters": [
+          {
+            "description": "Task id.",
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "description": "Task id.",
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Page size.",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "`next_cursor` of the last page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`next_cursor` of the last page.",
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_CommentRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Task not found in the active organization"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List a task's comments",
+        "tags": [
+          "comments"
+        ]
+      },
+      "post": {
+        "description": "**Roles:** Admin, Manager, Member.\n\n**Audit:** writes a `comment.created` entry.",
+        "operationId": "create_comment",
+        "parameters": [
+          {
+            "description": "Task id.",
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "description": "Task id.",
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, expired, or invalid access token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Caller's role lacks the required permission"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Task not found in the active organization"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The task's board is archived"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request failed validation"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Comment on a task",
+        "tags": [
+          "comments"
         ]
       }
     },

@@ -87,3 +87,63 @@ class InvitationNotFoundError(AppError):
     status_code = 404
     code = "INVITATION_NOT_FOUND"
     message = "Invitation is invalid, expired or already used"
+
+
+class BoardNotFoundError(AppError):
+    status_code = 404
+    code = "BOARD_NOT_FOUND"
+    message = "Board not found"
+
+
+class ColumnNotFoundError(AppError):
+    status_code = 404
+    code = "COLUMN_NOT_FOUND"
+    message = "Column not found"
+
+
+class TaskNotFoundError(AppError):
+    status_code = 404
+    code = "TASK_NOT_FOUND"
+    message = "Task not found"
+
+
+class BoardArchivedError(AppError):
+    status_code = 409
+    code = "BOARD_ARCHIVED"
+    message = "This board is archived and cannot be changed"
+
+
+class ColumnNotEmptyError(AppError):
+    status_code = 409
+    code = "COLUMN_NOT_EMPTY"
+    message = "Move or delete the tasks in this column first"
+
+
+class BoardHasNoColumnsError(AppError):
+    status_code = 409
+    code = "BOARD_HAS_NO_COLUMNS"
+    message = "Add a column to this board before creating tasks"
+
+
+class InvalidAssigneeError(AppError):
+    status_code = 422
+    code = "INVALID_ASSIGNEE"
+    message = "The assignee must be a member of this organization"
+
+
+class IdempotencyKeyReusedError(AppError):
+    status_code = 409
+    code = "IDEMPOTENCY_KEY_REUSED"
+    message = "This Idempotency-Key was already used with a different request"
+
+
+class IdempotencyInProgressError(AppError):
+    status_code = 409
+    code = "IDEMPOTENCY_IN_PROGRESS"
+    message = "A request with this Idempotency-Key is still being processed"
+
+
+class IdempotencyUnavailableError(AppError):
+    status_code = 503
+    code = "IDEMPOTENCY_UNAVAILABLE"
+    message = "Idempotency checks are temporarily unavailable; retry without the header or later"

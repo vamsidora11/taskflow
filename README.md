@@ -1,135 +1,197 @@
 # TaskFlow
 
-Multi-tenant SaaS task management platform. See [PLAN.md](PLAN.md) for the full specification and
-[CLAUDE.md](CLAUDE.md) for contributor conventions. Current state: Phase 6 (backend complete: auth, RBAC, boards, tasks, comments, audit, rate limiting).
+A multi-tenant SaaS task-management platform in the style of Trello and Jira. Organizations sign up,
+get fully isolated data, role-based access, kanban boards, tasks, comments and an audit trail.
+
+The specification is [PLAN.md](PLAN.md); contributor conventions are in [CLAUDE.md](CLAUDE.md);
+build status and what is verified is in [PROGRESS.md](PROGRESS.md).
+
+## Features
+
+- Organization signup; the creator becomes admin. Invitations by email (single-use, expiring).
+- Roles per organization: **admin**, **manager**, **member**, enforced by one permission matrix.
+- Boards, columns, tasks (assignee, priority, due date), drag-and-drop ordering, comments.
+- Append-only audit log of every significant action.
+- JWT access tokens with rotating, reuse-detecting refresh tokens.
+- Rate limiting, security headers, structured logging, idempotent task creation.
+- React SPA: login, org switcher, kanban board, task drawer, members, activity feed.
+
+Out of scope for v1 (future work): real-time collaboration over WebSockets, billing, SSO/SAML/OAuth
+login, a mobile app, file attachments (planned with S3-compatible storage).
+
+## Architecture
+
+```
+          +-------------------+
+          |  React SPA (Vite) |
+          +---------+---------+
+                    | HTTPS, JSON, Bearer JWT (+ HttpOnly refresh cookie)
+          +---------v---------+
+          |  Nginx (TLS, one  |   SPA and API share one origin
+          |  origin, proxy)   |
+          +---------+---------+
+                    |
+          +---------v--------------------------------+
+          |              FastAPI                     |
+          |  middleware: CORS, security headers,     |
+          |              request id, access log      |
+          |  routers  ->  services  ->  repositories |
+          |  (HTTP)       (rules)       (SQL only)   |
+          +----+------------------------+------------+
+               |                        |
+     +---------v--------+      +--------v--------+
+     |  PostgreSQL 16   |      |     Redis 7     |
+     |  RLS on every    |      |  rate limits,   |
+     |  tenant table    |      |  idempotency    |
+     +------------------+      +-----------------+
+```
+
+Layering rules (enforced by review and by the tests): routers only handle HTTP; services hold the
+business rules and never import FastAPI; repositories are the only place that writes SQL; Pydantic
+schemas are separate from ORM models and ORM objects are never returned.
 
 ## Quick start
 
+**Everything in containers** (needs Docker):
+
 ```bash
-cp .env.example .env          # edit secrets
+cp .env.example .env          # then set the passwords and JWT_SECRET_KEY
 docker compose up --build     # app at http://localhost:8080
+docker compose exec backend python -m scripts.seed   # optional demo data
 ```
 
-- API docs: http://localhost:8080/docs (when `ENABLE_DOCS=true`)
-- Health: http://localhost:8080/health and http://localhost:8080/health/ready
+- App: http://localhost:8080 · API docs: http://localhost:8080/docs · Health: `/health`, `/health/ready`
 
-## Backend (local)
+**Backend only** (Python 3.12, a PostgreSQL 16 and a Redis 7 reachable):
 
 ```bash
 cd backend
-python3.12 -m venv .venv && source .venv/bin/activate
+python3.12 -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-ruff check . && ruff format --check . && mypy app scripts tests && pytest
+alembic upgrade head                                       # as the owner role, see below
 uvicorn app.main:app --reload
 ```
 
-### Database tests
+**Frontend only:** `cd frontend && npm install && npm run dev` (proxies `/api` to `localhost:8000`).
 
-Tests run against a real PostgreSQL (see PLAN.md section 13). Point `TEST_DATABASE_URL` at a
-**superuser** connection; the suite creates its own roles (`tf_test_owner`, `tf_test_app`) and a
-throwaway database, applies the migrations, and drops it afterwards. Without a reachable server
-the database tests are skipped locally and fail in CI. A reachable Redis (`REDIS_URL`) enables one
-extra test.
+### Demo accounts
 
-```bash
-export TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
-```
+After `python -m scripts.seed` (demo data only, never run it against production). Every account uses
+the password **`demo-password-123`**.
 
-### Migrations
+| Organization | Role | Email |
+|---|---|---|
+| Acme Corp | admin | `ada@acme.example` |
+| Acme Corp | manager | `grace@acme.example` |
+| Acme Corp **and** Globex Inc | member | `alan@acme.example` (shows the org switcher) |
+| Globex Inc | admin | `hank@globex.example` |
 
-`alembic upgrade head` connects with `MIGRATION_DATABASE_URL` (the `owner` role). The API itself
-connects as `app_user` (`DATABASE_URL`), which has DML grants only, so row-level security applies.
-`docker compose up` runs the migrations automatically before the API starts.
+> No live deployment exists yet, so there is no public demo URL. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-### Authentication
-
-Try it in Swagger (`/docs`): `POST /api/v1/auth/signup`, copy the `access_token`, click
-**Authorize**, then call `GET /api/v1/auth/me`.
-
-- Access token: 15-minute HS256 JWT (`sub`, `org_id`, `role`, `iat`, `exp`, `jti`, `type`).
-- Refresh token: opaque random value, stored only as a SHA-256 hash, delivered in an `HttpOnly`,
-  `SameSite=Strict` cookie scoped to `/api/v1/auth`. Each token works once; replaying a rotated
-  token revokes the whole family. The cookie is `Secure` by default (`COOKIE_SECURE`); browsers
-  exempt `localhost`, so plain-HTTP local use works.
-- Passwords: Argon2id, minimum 12 characters. Login returns the identical error for an unknown
-  email, a wrong password and a disabled account.
-- Every request re-checks the token against the live membership, so removing a member takes effect
-  immediately rather than when their token expires.
-
-Design note: login must find a user's organizations before any organization is chosen, which
-row-level security on `memberships` would block. Rather than widening a policy, two narrow
-`SECURITY DEFINER` functions (`auth_find_user_by_email`, `auth_list_memberships`) are the only
-pre-tenant lookups; the second takes no argument and returns only the current user's rows.
-
-### Roles and organization management
-
-Roles are per organization (`admin`, `manager`, `member`). The permission matrix lives in one file,
-`backend/app/core/permissions.py`, and routes guard themselves with
-`Depends(require_permission(Permission.X))`. `backend/tests/unit/test_permissions.py` restates the
-matrix from PLAN.md section 5 independently and checks every role and permission pair.
-
-- The role used on each request is read from the database, not from the token, so promoting,
-  demoting or removing someone takes effect on their very next request.
-- An organization always keeps at least one admin. Role changes and removals row-lock the admin
-  memberships, so two admins demoting each other at once cannot both succeed.
-- Invitations are single-use, expire after 7 days, and are stored hashed. Re-inviting an address
-  replaces its pending invitation. Accepting requires a password: new accounts choose one,
-  existing accounts must supply theirs, so the emailed link alone never unlocks an account.
-- `EMAIL_BACKEND=console` prints invitation emails, including the link, to the server output for local
-  development. Use `smtp` anywhere else.
-- The invitation token travels in the URL path (`/org/invitations/{token}/accept`), as specified,
-  so it can appear in HTTP access logs. Treat those logs as sensitive or switch access logging off.
-
-### Boards, columns and tasks
-
-- Every tenant table (`boards`, `board_columns`, `tasks`) carries `organization_id` and is covered by
-  forced RLS. Another organization's board or task answers 404, exactly like one that does not exist.
-- A new board gets To Do / In Progress / Done unless `columns` is supplied. Archiving (`DELETE`)
-  makes a board read-only and hides it from the default list; `PATCH is_archived=false` restores it.
-- Tasks keep a dense 0-based `position` within their column. Moving, creating and deleting take a row
-  lock on the board and renumber in one transaction, so concurrent edits cannot interleave and a
-  failed move changes nothing. Deleting a task is a soft delete; a column that still holds live
-  tasks cannot be deleted.
-- Ownership rules (service layer): admins and managers edit, move and reassign any task; a member
-  edits and moves only tasks assigned to them, cannot reassign, and can create a task only for
-  themselves or unassigned. Deleting tasks is admin/manager only.
-- Task lists use keyset pagination in board order (column, then position). A task moved between page
-  requests can appear twice or be skipped; the cursor is stable for a static board, not a snapshot.
-- `POST /boards/{id}/tasks` honours `Idempotency-Key` (max 128 chars). The first response is kept in
-  Redis for 24 hours and replayed with `Idempotent-Replay: true`; the same key with a different body
-  is 409; concurrent duplicates get 409 while the first runs; a failed request releases its key.
-  Keys are scoped to organization, user and URL, and are stored hashed. If Redis is unreachable, a
-  request that sends the header gets 503 (a silent duplicate would defeat the point), while requests
-  without it are unaffected.
-- `docs/openapi.json` is the committed API contract. After changing any route or schema run
-  `cd backend && python -m scripts.export_openapi`; a test and CI fail if it is stale.
-
-### Rate limiting and hardening
-
-- **Rate limits** (Redis, fixed window, atomic `INCR`+`EXPIRE`+`TTL` in one `MULTI/EXEC`), all from
-  configuration: login 10/min per IP and 5 per 15 min per account, refresh 30/min per IP, signup and
-  invitation-accept 10/min per IP, authenticated writes 120/min and reads 600/min per user. A 429
-  carries `Retry-After`, `X-RateLimit-Limit` and `X-RateLimit-Remaining`; the same two budget headers
-  appear on every response that was counted, including errors. Identities are hashed in Redis keys.
-- **Fail open.** If Redis is unreachable the limiter logs a warning and lets the request through, so a
-  Redis outage cannot take the API down. The trade-off is explicit: while Redis is down there is no
-  throttling (brute-force protection is degraded), so alert on that warning. Idempotency is the
-  opposite, deliberately: a request that sends `Idempotency-Key` gets 503 rather than risking a
-  silent duplicate.
-- **Behind a proxy**, the backend runs with `--proxy-headers`, so per-IP limits and audit rows see the
-  client address from `X-Forwarded-For`. This is only safe because the backend port is not published;
-  never expose it directly while `--forwarded-allow-ips=*` is set.
-- **Security headers** on every response (`nosniff`, `DENY` framing, `no-referrer`, restrictive
-  `Permissions-Policy`), `Strict-Transport-Security` in staging and production, and
-  `Cache-Control: no-store` on all `/api/` responses. CORS allows only `FRONTEND_ORIGIN`, with
-  credentials.
-- **Logging** is structured JSON (`LOG_JSON=false` for plain text), one access line per request with
-  the request id, status, duration and user id. Headers, bodies and query strings are never logged, the
-  invitation token in the URL path is masked, and every record passes through a redactor for bearer
-  tokens, JWTs and `password=`/`token=` style values. Unhandled errors return a generic 500 body.
-
-## Frontend (local)
+## Testing and CI
 
 ```bash
-cd frontend && npm install && npm run dev
+cd backend
+ruff check . && ruff format --check . && mypy app scripts tests
+export TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/postgres  # superuser
+pytest                       # unit, integration and security suites; about 8 minutes
+pytest tests/security        # the security suite alone
+pytest --cov=app --cov-fail-under=80
 ```
+
+Tests run against a **real PostgreSQL** (no database mocking). The suite creates its own roles
+(`tf_test_owner`, `tf_test_app`) and a throwaway database, applies the real migrations, connects as
+the unprivileged runtime role, and drops everything afterwards. Without a reachable server the
+database tests are skipped locally and **fail** in CI. A reachable Redis (`REDIS_URL`) additionally
+enables the real-Redis variants of the limiter and idempotency tests; everything else uses an
+in-memory fake.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push: Ruff, mypy, the OpenAPI drift check,
+the full backend suite with coverage against Postgres and Redis service containers, the frontend
+lint, type check, tests and build, and a Docker build of both images.
+
+`docs/openapi.json` is the committed API contract. After changing a route or schema run
+`cd backend && python -m scripts.export_openapi`; a test and CI fail if it is stale. The frontend's
+types are generated from it (`cd frontend && npm run gen:api`).
+
+## Design decisions and trade-offs
+
+**Shared-schema multi-tenancy with Row-Level Security.** Every tenant table carries
+`organization_id`. PostgreSQL itself filters rows by a transaction-local `app.current_org_id`, so an
+application bug cannot leak another tenant's data. The API connects as `app_user`, a role that does
+not own the tables, is not a superuser and lacks `BYPASSRLS`; migrations run as `owner`. Policies are
+`FORCE`d and fail closed (an unset setting matches nothing). *Trade-off:* cheap to operate and the
+most common SaaS shape, but tenants share a database; a regulated customer would justify
+schema- or database-per-tenant. Another tenant's resource answers **404, not 403**, so existence is
+not revealed.
+
+**Pre-tenant lookups through two narrow `SECURITY DEFINER` functions.** Login must find a user's
+organizations before any is chosen, which RLS blocks. Rather than widening a policy, the lookups are
+functions that return only what that step needs (the membership function takes no argument and reads
+the caller's own id), with execute rights revoked from `PUBLIC`.
+
+**Short-lived JWT access tokens and rotating refresh tokens.** A 15-minute HS256 access token lives
+only in browser memory. The refresh token is opaque, stored only as a SHA-256 hash, and travels in an
+`HttpOnly`, `SameSite=Strict`, `Secure` cookie scoped to `/api/v1/auth`. Each refresh token works once;
+presenting a rotated one revokes the whole token family (the attack this stops: a stolen refresh token
+being used silently alongside the real one). *Trade-off:* HS256 means every service that verifies
+tokens holds the signing secret; RS256 would remove that at the cost of key management.
+The role used on each request is read from the database, not the token, so demotion and removal take
+effect immediately instead of when a token expires.
+
+**Audit log is append-only in the database.** `app_user` holds `INSERT` and `SELECT` on `audit_logs`
+and nothing else, so history cannot be rewritten even by a bug or SQL injection in the API. Rows are
+written in the same transaction as the change they describe (the row exists if and only if the change
+committed), carry the request id for correlation with logs, store field diffs rather than whole
+records, and pass through a redactor so passwords and tokens never reach them.
+
+**Rate limiting fails open.** Counters are atomic in Redis (`MULTI/EXEC`). If Redis is down the
+limiter lets requests through and logs a warning, so a cache outage cannot take the API down.
+*Trade-off:* during an outage there is no throttling, so alert on that warning. Idempotency is
+deliberately the opposite: a request that sends an `Idempotency-Key` gets 503 rather than risking a
+silent duplicate.
+
+**Idempotent task creation.** Retrying `POST /boards/{id}/tasks` with the same `Idempotency-Key`
+replays the original response for 24 hours. A different body with the same key is 409; concurrent
+duplicates get 409 while the first runs; a failed request releases its key. The stored response is
+written only after the transaction commits.
+
+**Writes are durable before the response.** FastAPI runs a `yield` dependency's cleanup after the
+response is sent by default, which would put the commit after the client's 201. The session
+dependencies use `scope="function"` so the commit happens first, and a test proves it.
+
+**Task order is exact, not approximate.** Positions are dense per column and renumbered in one
+transaction under a row lock on the board, so concurrent moves cannot interleave and a failed move
+changes nothing. *Trade-off:* writes to one board serialize; fine for human-scale boards.
+List pagination is keyset-based, stable for a static board but not a snapshot.
+
+**Invitations require a password.** Following the emailed link alone never grants access to an
+existing account: new accounts choose a password, existing accounts must supply theirs.
+The token travels in the URL path, as specified, so treat proxy access logs as sensitive.
+
+**Behind a proxy.** The backend runs with `--proxy-headers`, so per-IP limits and audit rows see the
+client address from `X-Forwarded-For`. nginx overwrites that header with the real peer address and
+the backend port is not published; never expose the backend directly while it trusts that header.
+
+**Hardening.** Security headers on every response, HSTS in staging and production,
+`Cache-Control: no-store` under `/api/`, CORS limited to `FRONTEND_ORIGIN`, one structured JSON access
+line per request (no headers, bodies or query strings; the invitation token in the path is masked),
+and a redactor on every log record.
+
+## What to change at 10x and 100x
+
+Read replicas for lists, PgBouncer (compatible: RLS context is transaction-local), monthly
+partitioning of `audit_logs`, rate limiting moved to the gateway with Redis as backstop, Redis caching
+of hot reads, and email moved to a queue. Details in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+## Repository layout
+
+```
+backend/   FastAPI app (app/), Alembic migrations, tests (unit, integration, security), scripts
+frontend/  React + Vite + TypeScript SPA
+infra/     nginx and postgres configuration
+docs/      openapi.json (the contract), DEPLOYMENT.md
+```
+
+Configuration is environment-driven; every variable is documented in [.env.example](.env.example).
+Never commit real secrets.

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.error_handlers import register_error_handlers
-from app.api.v1 import auth, boards, health, organization, tasks
+from app.api.v1 import audit, auth, boards, comments, health, organization, tasks
 from app.core.config import settings
 from app.middleware.request_id import RequestIdMiddleware
 
@@ -54,6 +54,8 @@ def create_app(enable_docs: bool | None = None) -> FastAPI:
     app.include_router(organization.router)
     app.include_router(boards.router)
     app.include_router(tasks.router)
+    app.include_router(comments.router)
+    app.include_router(audit.router)
     app.include_router(health.router)
     return app
 

@@ -1,5 +1,8 @@
+/// <reference types="vitest/config" />
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+
+const backend = 'http://localhost:8000'
 
 export default defineConfig({
   plugins: [react()],
@@ -7,8 +10,15 @@ export default defineConfig({
     host: true,
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:8000',
-      '/health': 'http://localhost:8000',
+      '/api': backend,
+      '/health': backend,
+      '/docs': backend,
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
   },
 })

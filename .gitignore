@@ -23,3 +23,8 @@ dist/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Local run artifacts
+.coverage*
+.full-run.log
+coverage.xml

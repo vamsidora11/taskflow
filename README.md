@@ -1,7 +1,7 @@
 # TaskFlow
 
 Multi-tenant SaaS task management platform. See [PLAN.md](PLAN.md) for the full specification and
-[CLAUDE.md](CLAUDE.md) for contributor conventions. Current state: Phase 2 (authentication).
+[CLAUDE.md](CLAUDE.md) for contributor conventions. Current state: Phase 3 (RBAC and organization management).
 
 ## Quick start
 
@@ -60,6 +60,25 @@ Design note: login must find a user's organizations before any organization is c
 row-level security on `memberships` would block. Rather than widening a policy, two narrow
 `SECURITY DEFINER` functions (`auth_find_user_by_email`, `auth_list_memberships`) are the only
 pre-tenant lookups; the second takes no argument and returns only the current user's rows.
+
+### Roles and organization management
+
+Roles are per organization (`admin`, `manager`, `member`). The permission matrix lives in one file,
+`backend/app/core/permissions.py`, and routes guard themselves with
+`Depends(require_permission(Permission.X))`. `backend/tests/unit/test_permissions.py` restates the
+matrix from PLAN.md section 5 independently and checks every role and permission pair.
+
+- The role used on each request is read from the database, not from the token, so promoting,
+  demoting or removing someone takes effect on their very next request.
+- An organization always keeps at least one admin. Role changes and removals row-lock the admin
+  memberships, so two admins demoting each other at once cannot both succeed.
+- Invitations are single-use, expire after 7 days, and are stored hashed. Re-inviting an address
+  replaces its pending invitation. Accepting requires a password: new accounts choose one,
+  existing accounts must supply theirs, so the emailed link alone never unlocks an account.
+- `EMAIL_BACKEND=console` prints invitation emails, including the link, to the server output for local
+  development. Use `smtp` anywhere else.
+- The invitation token travels in the URL path (`/org/invitations/{token}/accept`), as specified,
+  so it can appear in HTTP access logs. Treat those logs as sensitive or switch access logging off.
 
 ## Frontend (local)
 

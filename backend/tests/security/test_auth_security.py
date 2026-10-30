@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.api.deps import get_factory
 from app.core.config import settings
-from tests.integration.test_auth_api import COOKIE, PASSWORD, bearer, signup, unique_email
+from tests.helpers import COOKIE, PASSWORD, bearer, signup, unique_email
 
 
 def replay(api: AsyncClient, token: str) -> AsyncClient:

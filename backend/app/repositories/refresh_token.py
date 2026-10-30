@@ -41,6 +41,20 @@ class RefreshTokenRepository:
         stmt = select(RefreshToken).where(RefreshToken.token_hash == token_hash).with_for_update()
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
+    async def revoke_for_user_in_org(
+        self, user_id: uuid.UUID, organization_id: uuid.UUID, now: datetime
+    ) -> None:
+        """End every session a user holds in one organization (e.g. when they are removed)."""
+        await self.session.execute(
+            update(RefreshToken)
+            .where(
+                RefreshToken.user_id == user_id,
+                RefreshToken.organization_id == organization_id,
+                RefreshToken.revoked_at.is_(None),
+            )
+            .values(revoked_at=now)
+        )
+
     async def revoke_family(self, family_id: uuid.UUID, now: datetime) -> None:
         await self.session.execute(
             update(RefreshToken)

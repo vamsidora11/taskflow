@@ -137,7 +137,7 @@ class AuthService:
             await MembershipRepository(self.session, org_id).add(
                 user_id=user_id, role=Role.ADMIN.value
             )
-            tokens, _ = await self._issue(user_id, org_id, Role.ADMIN.value, None, client)
+            tokens, _ = await self.issue_session(user_id, org_id, Role.ADMIN.value, None, client)
             await self.session.commit()
         except IntegrityError as exc:
             await self.session.rollback()
@@ -161,7 +161,9 @@ class AuthService:
         active = memberships[0]  # earliest membership; POST /auth/switch-org changes it
 
         await set_context(self.session, org_id=active.organization_id)
-        tokens, _ = await self._issue(user.id, active.organization_id, active.role, None, client)
+        tokens, _ = await self.issue_session(
+            user.id, active.organization_id, active.role, None, client
+        )
         await self.session.commit()
         return tokens
 
@@ -192,7 +194,7 @@ class AuthService:
             await self.session.commit()
             raise InvalidRefreshTokenError()
 
-        tokens, new_row = await self._issue(
+        tokens, new_row = await self.issue_session(
             row.user_id, row.organization_id, membership.role, row.family_id, client
         )
         row.replaced_by_id = new_row.id
@@ -227,14 +229,14 @@ class AuthService:
             )
             if old is not None and old.user_id == user_id:
                 await self.tokens.revoke_family(old.family_id, datetime.now(UTC))
-        tokens, _ = await self._issue(user_id, target_org_id, membership.role, None, client)
+        tokens, _ = await self.issue_session(user_id, target_org_id, membership.role, None, client)
         await self.session.commit()
         return tokens
 
     async def account_overview(self, user: AuthenticatedUser) -> AccountOverview:
         return AccountOverview(user=user, organizations=await self.identity.list_memberships())
 
-    async def _issue(
+    async def issue_session(
         self,
         user_id: uuid.UUID,
         org_id: uuid.UUID,

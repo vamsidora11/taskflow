@@ -16,7 +16,9 @@ class ReadinessStatus(BaseModel):
         }
     )
 
-    status: Literal["ok"] = Field(description="`ok` when all dependencies are reachable.")
-    checks: dict[str, str] = Field(
-        description="Per-dependency state: `ok`, or `not_configured` until probes exist."
+    status: Literal["ok", "unavailable"] = Field(
+        description="`ok` when every dependency is reachable, otherwise `unavailable`."
+    )
+    checks: dict[str, Literal["ok", "error"]] = Field(
+        description="Per-dependency state: `ok` or `error`."
     )

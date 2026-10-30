@@ -1,7 +1,7 @@
 # TaskFlow
 
 Multi-tenant SaaS task management platform. See [PLAN.md](PLAN.md) for the full specification and
-[CLAUDE.md](CLAUDE.md) for contributor conventions. Current state: Phase 4 (boards, columns and tasks).
+[CLAUDE.md](CLAUDE.md) for contributor conventions. Current state: Phase 6 (backend complete: auth, RBAC, boards, tasks, comments, audit, rate limiting).
 
 ## Quick start
 
@@ -103,6 +103,30 @@ matrix from PLAN.md section 5 independently and checks every role and permission
   without it are unaffected.
 - `docs/openapi.json` is the committed API contract. After changing any route or schema run
   `cd backend && python -m scripts.export_openapi`; a test and CI fail if it is stale.
+
+### Rate limiting and hardening
+
+- **Rate limits** (Redis, fixed window, atomic `INCR`+`EXPIRE`+`TTL` in one `MULTI/EXEC`), all from
+  configuration: login 10/min per IP and 5 per 15 min per account, refresh 30/min per IP, signup and
+  invitation-accept 10/min per IP, authenticated writes 120/min and reads 600/min per user. A 429
+  carries `Retry-After`, `X-RateLimit-Limit` and `X-RateLimit-Remaining`; the same two budget headers
+  appear on every response that was counted, including errors. Identities are hashed in Redis keys.
+- **Fail open.** If Redis is unreachable the limiter logs a warning and lets the request through, so a
+  Redis outage cannot take the API down. The trade-off is explicit: while Redis is down there is no
+  throttling (brute-force protection is degraded), so alert on that warning. Idempotency is the
+  opposite, deliberately: a request that sends `Idempotency-Key` gets 503 rather than risking a
+  silent duplicate.
+- **Behind a proxy**, the backend runs with `--proxy-headers`, so per-IP limits and audit rows see the
+  client address from `X-Forwarded-For`. This is only safe because the backend port is not published;
+  never expose it directly while `--forwarded-allow-ips=*` is set.
+- **Security headers** on every response (`nosniff`, `DENY` framing, `no-referrer`, restrictive
+  `Permissions-Policy`), `Strict-Transport-Security` in staging and production, and
+  `Cache-Control: no-store` on all `/api/` responses. CORS allows only `FRONTEND_ORIGIN`, with
+  credentials.
+- **Logging** is structured JSON (`LOG_JSON=false` for plain text), one access line per request with
+  the request id, status, duration and user id. Headers, bodies and query strings are never logged, the
+  invitation token in the URL path is masked, and every record passes through a redactor for bearer
+  tokens, JWTs and `password=`/`token=` style values. Unhandled errors return a generic 500 body.
 
 ## Frontend (local)
 

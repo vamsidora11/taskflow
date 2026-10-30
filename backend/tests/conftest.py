@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async
 from sqlalchemy.pool import NullPool
 
 from app.api.deps import get_email_sender, get_factory, get_redis_client
+from app.core.config import settings
 from app.db.session import SessionFactory
 from app.main import create_app
 from tests.db_utils import DbUrls, drop_database, provision_database, server_available
@@ -54,6 +55,20 @@ async def app_engine(database: DbUrls) -> AsyncIterator[AsyncEngine]:
 @pytest.fixture
 def app_session_factory(app_engine: AsyncEngine) -> SessionFactory:
     return async_sessionmaker(app_engine, expire_on_commit=False)
+
+
+@pytest.fixture(autouse=True)
+def relaxed_rate_limits(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Most tests make many requests as one IP or user; rate-limit tests set real limits."""
+    for name in (
+        "rate_limit_login_per_ip",
+        "rate_limit_signup_per_ip",
+        "rate_limit_login_per_email",
+        "rate_limit_refresh_per_ip",
+        "rate_limit_write_per_user",
+        "rate_limit_read_per_user",
+    ):
+        monkeypatch.setattr(settings, name, "1000000/minute")
 
 
 @pytest.fixture

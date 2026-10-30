@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 
-from app.api.v1 import health
+from app.api.error_handlers import register_error_handlers
+from app.api.v1 import auth, health
 from app.core.config import settings
+from app.middleware.request_id import RequestIdMiddleware
 
 TAGS_METADATA = [
     {
@@ -29,7 +31,9 @@ def create_app(enable_docs: bool | None = None) -> FastAPI:
             "and paste it into the Authorize dialog. Access tokens expire after 15 minutes; "
             "use `POST /api/v1/auth/refresh` to rotate them.\n\n"
             "**Tenancy:** the active organization is embedded in the access token. "
-            "Use `POST /api/v1/auth/switch-org` to change it."
+            "Use `POST /api/v1/auth/switch-org` to change it.\n\n"
+            "**Errors:** every error, including validation failures (`422`), uses the envelope "
+            '`{"error": {"code", "message", "request_id"}}`.'
         ),
         contact={"name": "TaskFlow Team", "email": "support@example.com"},
         license_info={"name": "MIT"},
@@ -44,6 +48,9 @@ def create_app(enable_docs: bool | None = None) -> FastAPI:
             "displayRequestDuration": True,
         },
     )
+    app.add_middleware(RequestIdMiddleware)
+    register_error_handlers(app)
+    app.include_router(auth.router)
     app.include_router(health.router)
     return app
 

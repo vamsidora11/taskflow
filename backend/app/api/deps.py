@@ -1,17 +1,26 @@
 from collections.abc import AsyncIterator, Awaitable, Callable
+from dataclasses import dataclass
 from typing import Annotated
 
-from fastapi import Depends, Request
+from fastapi import Depends, Header, Request
 from fastapi.security import HTTPAuthorizationCredentials
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import PermissionDeniedError
 from app.core.permissions import Permission, has_permission
 from app.core.security import AccessTokenClaims, decode_access_token
 from app.core.security_scheme import bearer_scheme
+from app.db.redis import get_redis
 from app.db.session import SessionFactory, get_session_factory, tenant_session
 from app.services.auth import AuthenticatedUser, ClientInfo, resolve_authenticated_user
 from app.services.email import EmailSender, build_email_sender
+from app.services.idempotency import (
+    IdempotencyStore,
+    IdempotentReplay,
+    StoredResponse,
+    fingerprint,
+)
 
 _CURRENT_USER_KEY = "current_user"
 
@@ -103,3 +112,67 @@ def require_permission(
         return user
 
     return checker
+
+
+def get_redis_client() -> Redis:
+    """Overridable in tests to use an in-memory or throwaway Redis."""
+    return get_redis()
+
+
+def get_idempotency_store(redis: Redis = Depends(get_redis_client)) -> IdempotencyStore:
+    return IdempotencyStore(redis)
+
+
+@dataclass
+class IdempotencyContext:
+    """Handed to the route, which records the response it is about to return."""
+
+    result: StoredResponse | None = None
+
+
+async def idempotency_guard(
+    request: Request,
+    claims: AccessTokenClaims = Depends(get_token_claims),
+    store: IdempotencyStore = Depends(get_idempotency_store),
+    idempotency_key: str | None = Header(
+        default=None,
+        alias="Idempotency-Key",
+        min_length=1,
+        max_length=128,
+        description=(
+            "Unique key (max 128 chars) that makes retries safe: repeating the request within "
+            "24 hours returns the original response instead of creating a duplicate."
+        ),
+        examples=["6f1c2a8e-4b7d-4e9a-9d1f-2b3c4d5e6f70"],
+    ),
+) -> AsyncIterator[IdempotencyContext | None]:
+    """Replay-or-run guard for POST routes that accept an `Idempotency-Key`.
+
+    Declare it BEFORE the session dependencies in a route's signature. Dependencies are torn
+    down in reverse order, so the stored response is written only after the tenant session has
+    committed: a failed commit releases the key instead of recording a response for nothing.
+    """
+    if idempotency_key is None:
+        yield None
+        return
+    scope = f"{claims.org_id}:{claims.user_id}"
+    request_fingerprint = fingerprint(await request.body(), request.method, request.url.path)
+    request_key = f"{request.url.path}:{idempotency_key}"
+    replay = await store.begin(scope, request_key, request_fingerprint)
+    if replay is not None:
+        raise IdempotentReplay(replay)
+    context = IdempotencyContext()
+    try:
+        yield context
+    except BaseException:
+        await store.abort(scope, request_key)
+        raise
+    if context.result is not None:
+        await store.complete(scope, request_key, request_fingerprint, context.result)
+    else:
+        await store.abort(scope, request_key)
+
+
+IdempotencyGuard = Annotated[
+    IdempotencyContext | None, Depends(idempotency_guard, scope="function")
+]

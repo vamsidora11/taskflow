@@ -7,6 +7,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.exceptions import AppError
 from app.schemas.errors import ErrorDetail, ErrorResponse
+from app.services.idempotency import IdempotentReplay
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,15 @@ async def validation_error_handler(request: Request, exc: Exception) -> JSONResp
     return error_response(request, 422, "VALIDATION_ERROR", problems or "Invalid request")
 
 
+async def idempotent_replay_handler(request: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, IdempotentReplay)
+    return JSONResponse(
+        exc.response.body,
+        status_code=exc.response.status,
+        headers={"Idempotent-Replay": "true"},
+    )
+
+
 async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.exception("unhandled error (request_id=%s)", request_id_of(request))
     return error_response(request, 500, "INTERNAL_ERROR", "Internal server error")
@@ -69,4 +79,5 @@ def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(AppError, app_error_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_error_handler)
+    app.add_exception_handler(IdempotentReplay, idempotent_replay_handler)
     app.add_exception_handler(Exception, unhandled_error_handler)

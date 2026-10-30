@@ -1,0 +1,50 @@
+[project]
+name = "taskflow-backend"
+version = "1.0.0"
+description = "TaskFlow API: multi-tenant task management platform"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy[asyncio]>=2.0.30",
+    "asyncpg>=0.29",
+    "alembic>=1.13",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "redis>=5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]
+# FastAPI's Depends()/Header() defaults in signatures are idiomatic.
+ignore = ["B008"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]

@@ -30,6 +30,7 @@ class Permission(StrEnum):
     TASK_EDIT_OWN = "task:edit_own"
     TASK_DELETE = "task:delete"
     COMMENT_CREATE = "comment:create"
+    COMMENT_DELETE_ANY = "comment:delete_any"
     AUDIT_VIEW = "audit:view"
 
 
@@ -54,6 +55,7 @@ _ALLOWED_ROLES: dict[Permission, frozenset[Role]] = {
     Permission.TASK_EDIT_OWN: _EVERYONE,
     Permission.TASK_DELETE: _MANAGERS_UP,
     Permission.COMMENT_CREATE: _EVERYONE,
+    Permission.COMMENT_DELETE_ANY: _MANAGERS_UP,
     Permission.AUDIT_VIEW: _MANAGERS_UP,
 }
 

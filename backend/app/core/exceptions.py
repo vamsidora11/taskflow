@@ -147,3 +147,9 @@ class IdempotencyUnavailableError(AppError):
     status_code = 503
     code = "IDEMPOTENCY_UNAVAILABLE"
     message = "Idempotency checks are temporarily unavailable; retry without the header or later"
+
+
+class CommentNotFoundError(AppError):
+    status_code = 404
+    code = "COMMENT_NOT_FOUND"
+    message = "Comment not found"

@@ -72,7 +72,9 @@ alembic upgrade head                                       # as the owner role, 
 uvicorn app.main:app --reload
 ```
 
-**Frontend only:** `cd frontend && npm install && npm run dev` (proxies `/api` to `localhost:8000`).
+**Frontend only:** `cd frontend && npm install && npm run dev` (proxies `/api`, `/health` and `/docs` to
+`localhost:8000`). Scripts: `lint`, `typecheck`, `test`, `build`, `gen:api` (regenerates the typed API
+client from `docs/openapi.json`).
 
 ### Demo accounts
 

@@ -1,7 +1,9 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+DEFAULT_JWT_SECRET = "change-me-generate-a-long-random-string"
 
 
 class Settings(BaseSettings):
@@ -21,10 +23,16 @@ class Settings(BaseSettings):
     )
     redis_url: str = "redis://localhost:6379/0"
 
-    jwt_secret_key: str = "change-me-generate-a-long-random-string"
+    jwt_secret_key: str = DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
     access_token_ttl_minutes: int = 15
     refresh_token_ttl_days: int = 14
+    refresh_cookie_name: str = "refresh_token"
+    refresh_cookie_path: str = "/api/v1/auth"
+    cookie_secure: bool = Field(
+        default=True,
+        description="Send the refresh cookie over HTTPS only (browsers exempt localhost)",
+    )
 
     rate_limit_login_per_ip: str = "10/minute"
     rate_limit_login_per_email: str = "5/15minutes"
@@ -37,6 +45,12 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_user: str | None = None
     smtp_password: str | None = None
+
+    @model_validator(mode="after")
+    def _reject_default_secret_in_production(self) -> "Settings":
+        if self.app_env == "production" and self.jwt_secret_key == DEFAULT_JWT_SECRET:
+            raise ValueError("JWT_SECRET_KEY must be set to a unique secret in production")
+        return self
 
 
 @lru_cache

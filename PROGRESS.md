@@ -17,7 +17,13 @@ verified. Update this at the end of every session.
 
 ## Verified (ran and passed)
 
-- Backend: Ruff, mypy (strict) and the full pytest suite against a real PostgreSQL 16.
+- Backend: Ruff, mypy (strict) and the full pytest suite against a real PostgreSQL 16: 627 passed,
+  13 skipped (the real-Redis variants, which run in CI), **98% line-and-branch coverage** of `app/`
+  (target 80%).
+- Frontend: lint, type check, build and 103 tests (mocked API), and `gen:api` reproduces the committed
+  types byte for byte.
+- A real uvicorn process with a real redis-py client over TCP: readiness (database and Redis both `ok`),
+  security headers, idempotent replay, rate-limit headers and 429s, and a request log with no secrets.
 - Migrations run up, down and up again; the models match the migrations exactly.
 - Tenant isolation, RBAC matrix (every role and permission), refresh-token reuse, audit
   append-only privileges, and secret hygiene have dedicated tests.
@@ -39,6 +45,10 @@ verified. Update this at the end of every session.
   no violations on the main pages in jsdom, but axe's colour-contrast rule does not run there.
 
 ## Known limitations
+
+- With coverage enabled the backend suite is slow (about 56 minutes on the development machine, versus
+  about 8 minutes without coverage) because SQLAlchemy's async engine needs greenlet tracing. CI runs
+  coverage, so expect a long job; consider sharding the suite or measuring coverage nightly.
 
 - `npm audit` reports advisories in the frontend's dev tooling (vitest 2 pulls in a vulnerable
   `tinypool`; vitest is pinned to 2 because newer releases conflict with Vite 5). They are

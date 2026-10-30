@@ -14,6 +14,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit import AuditAction
 from app.core.enums import Priority
 from app.core.exceptions import (
     BoardArchivedError,
@@ -32,6 +33,7 @@ from app.db.models.task import Task
 from app.repositories.board import BoardRepository, ColumnRepository
 from app.repositories.membership import MembershipRepository
 from app.repositories.task import TaskFilters, TaskRepository, TaskRow
+from app.services.audit import AuditService
 from app.services.auth import AuthenticatedUser
 
 EDITABLE_FIELDS = ("title", "description", "priority", "assignee_id", "due_date")
@@ -47,6 +49,17 @@ class TaskService:
         self.tasks = TaskRepository(session, org)
         self.members = MembershipRepository(session, org)
         self.can_edit_any = has_permission(actor.role, Permission.TASK_EDIT_ANY)
+        self.audit = AuditService(session)
+
+    async def _audit(self, action: AuditAction, task: Task, **kwargs: Any) -> None:
+        await self.audit.record(
+            action=action,
+            entity_type="task",
+            entity_id=task.id,
+            organization_id=self.actor.organization_id,
+            actor_user_id=self.actor.id,
+            **kwargs,
+        )
 
     # --- reads ---------------------------------------------------------------------------
 
@@ -110,6 +123,16 @@ class TaskService:
             created_by=self.actor.id,
         )
         await self.session.refresh(task)
+        await self._audit(
+            AuditAction.TASK_CREATED,
+            task,
+            details={
+                "board_id": board_id,
+                "column_id": column.id,
+                "title": title,
+                "assignee_id": assignee_id,
+            },
+        )
         return task
 
     async def update_task(self, task_id: uuid.UUID, changes: dict[str, Any]) -> Task:
@@ -121,12 +144,16 @@ class TaskService:
                 raise PermissionDeniedError("Only admins and managers can reassign tasks")
             if changes["assignee_id"] is not None:
                 await self._check_assignee(changes["assignee_id"])
+        before = {f: getattr(task, f) for f in EDITABLE_FIELDS if f in changes}
         for field in EDITABLE_FIELDS:
             if field in changes:
                 value = changes[field]
                 setattr(task, field, value.value if isinstance(value, Priority) else value)
         await self.session.flush()
         await self.session.refresh(task)
+        after = {f: getattr(task, f) for f in before}
+        if before != after:
+            await self._audit(AuditAction.TASK_UPDATED, task, before=before, after=after)
         return task
 
     async def delete_task(self, task_id: uuid.UUID) -> None:
@@ -139,6 +166,9 @@ class TaskService:
         await self.tasks.shift_positions(task.column_id, low=task.status_position + 1, delta=-1)
         task.deleted_at = datetime.now(UTC)
         await self.session.flush()
+        await self._audit(
+            AuditAction.TASK_DELETED, task, details={"board_id": task.board_id, "title": task.title}
+        )
 
     async def move_task(self, task_id: uuid.UUID, *, column_id: uuid.UUID, position: int) -> Task:
         """Move to `column_id` at 0-based `position` (clamped to the end). One transaction, one
@@ -173,6 +203,18 @@ class TaskService:
         task.status_position = new
         await self.session.flush()
         await self.session.refresh(task)
+        if (source_id, old) != (target.id, new):
+            await self._audit(
+                AuditAction.TASK_MOVED,
+                task,
+                details={
+                    "board_id": task.board_id,
+                    "from_column_id": source_id,
+                    "to_column_id": target.id,
+                    "from_position": old,
+                    "to_position": new,
+                },
+            )
         return task
 
     # --- rules ---------------------------------------------------------------------------

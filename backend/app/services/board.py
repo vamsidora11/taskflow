@@ -2,9 +2,11 @@
 with AuditService in Phase 5. Permission checks happen at the router."""
 
 import uuid
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit import AuditAction
 from app.core.exceptions import (
     BoardArchivedError,
     BoardNotFoundError,
@@ -15,6 +17,7 @@ from app.core.pagination import decode_cursor, encode_cursor
 from app.db.models.board import Board, BoardColumn
 from app.repositories.board import BoardRepository, ColumnRepository
 from app.repositories.task import TaskRepository
+from app.services.audit import AuditService
 from app.services.auth import AuthenticatedUser
 
 DEFAULT_COLUMNS = ["To Do", "In Progress", "Done"]
@@ -27,6 +30,17 @@ class BoardService:
         self.boards = BoardRepository(session, actor.organization_id)
         self.columns = ColumnRepository(session, actor.organization_id)
         self.tasks = TaskRepository(session, actor.organization_id)
+        self.audit = AuditService(session)
+
+    async def _audit(self, action: AuditAction, board_id: uuid.UUID, **kwargs: Any) -> None:
+        await self.audit.record(
+            action=action,
+            entity_type="board",
+            entity_id=board_id,
+            organization_id=self.actor.organization_id,
+            actor_user_id=self.actor.id,
+            **kwargs,
+        )
 
     async def create_board(
         self, *, name: str, description: str | None, columns: list[str] | None
@@ -36,6 +50,11 @@ class BoardService:
             await self.columns.add(board_id=board.id, name=column_name, position=position)
             for position, column_name in enumerate(DEFAULT_COLUMNS if columns is None else columns)
         ]
+        await self._audit(
+            AuditAction.BOARD_CREATED,
+            board.id,
+            details={"name": name, "columns": [c.name for c in created]},
+        )
         return board, created
 
     async def list_boards(
@@ -67,6 +86,11 @@ class BoardService:
         board = await self.boards.lock(board_id)
         if board is None:
             raise BoardNotFoundError()
+        before = {
+            "name": board.name,
+            "description": board.description,
+            "is_archived": board.is_archived,
+        }
         if name is not None:
             board.name = name
         if description_given:
@@ -75,6 +99,19 @@ class BoardService:
             board.is_archived = is_archived
         await self.session.flush()
         await self.session.refresh(board)
+        after = {
+            "name": board.name,
+            "description": board.description,
+            "is_archived": board.is_archived,
+        }
+        if before != after:
+            archived_now = after["is_archived"] and not before["is_archived"]
+            await self._audit(
+                AuditAction.BOARD_ARCHIVED if archived_now else AuditAction.BOARD_UPDATED,
+                board.id,
+                before=before,
+                after=after,
+            )
         return board
 
     async def archive_board(self, board_id: uuid.UUID) -> None:
@@ -82,8 +119,15 @@ class BoardService:
         board = await self.boards.lock(board_id)
         if board is None:
             raise BoardNotFoundError()
-        board.is_archived = True
-        await self.session.flush()
+        if not board.is_archived:
+            board.is_archived = True
+            await self.session.flush()
+            await self._audit(
+                AuditAction.BOARD_ARCHIVED,
+                board.id,
+                before={"is_archived": False},
+                after={"is_archived": True},
+            )
 
     # --- columns -------------------------------------------------------------------------
 
@@ -97,12 +141,18 @@ class BoardService:
         ordered = [c for c in existing]
         ordered.insert(index, column)
         await self.columns.apply_order(ordered)
+        await self._audit(
+            AuditAction.BOARD_UPDATED,
+            board_id,
+            details={"column": name, "operation": "added", "position": index},
+        )
         return column
 
     async def update_column(
         self, column_id: uuid.UUID, *, name: str | None, position: int | None
     ) -> BoardColumn:
         column = await self._column_with_board_lock(column_id)
+        old_name, old_position = column.name, column.position
         if name is not None:
             column.name = name
         if position is not None:
@@ -112,17 +162,35 @@ class BoardService:
             ordered.insert(min(position, len(ordered)), column)
             await self.columns.apply_order(ordered)
         await self.session.flush()
+        if (old_name, old_position) != (column.name, column.position):
+            await self._audit(
+                AuditAction.BOARD_UPDATED,
+                column.board_id,
+                details={
+                    "column": column.name,
+                    "operation": "updated",
+                    "changes": {
+                        "name": [old_name, column.name],
+                        "position": [old_position, column.position],
+                    },
+                },
+            )
         return column
 
     async def delete_column(self, column_id: uuid.UUID) -> None:
         column = await self._column_with_board_lock(column_id)
         if await self.tasks.count_active(column.id) > 0:
             raise ColumnNotEmptyError()
-        board_id = column.board_id
+        board_id, column_name = column.board_id, column.name
         await self.session.delete(column)  # soft-deleted tasks go with it (ON DELETE CASCADE)
         await self.session.flush()
         remaining = await self.columns.list_for_board(board_id)
         await self.columns.apply_order(remaining)
+        await self._audit(
+            AuditAction.BOARD_UPDATED,
+            board_id,
+            details={"column": column_name, "operation": "deleted"},
+        )
 
     # --- helpers -------------------------------------------------------------------------
 

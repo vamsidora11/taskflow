@@ -6,6 +6,7 @@ rollback-on-error session would undo. Audit hooks (auth.login, auth.login_failed
 auth.refresh_reuse_detected) arrive with AuditService in Phase 5.
 """
 
+import hashlib
 import re
 import uuid
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit import AuditAction
 from app.core.config import settings
 from app.core.exceptions import (
     EmailAlreadyRegisteredError,
@@ -40,6 +42,7 @@ from app.repositories.membership import MembershipRepository
 from app.repositories.organization import OrganizationRepository
 from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.user import UserRepository
+from app.services.audit import AuditService
 
 
 @dataclass(frozen=True)
@@ -107,6 +110,7 @@ class AuthService:
         self.users = UserRepository(session)
         self.orgs = OrganizationRepository(session)
         self.tokens = RefreshTokenRepository(session)
+        self.audit = AuditService(session)
 
     async def signup(
         self,
@@ -138,6 +142,22 @@ class AuthService:
                 user_id=user_id, role=Role.ADMIN.value
             )
             tokens, _ = await self.issue_session(user_id, org_id, Role.ADMIN.value, None, client)
+            await self.audit.record(
+                action=AuditAction.ORG_CREATED,
+                entity_type="organization",
+                entity_id=org_id,
+                organization_id=org_id,
+                actor_user_id=user_id,
+                details={"name": organization_name},
+            )
+            await self.audit.record(
+                action=AuditAction.AUTH_LOGIN,
+                entity_type="user",
+                entity_id=user_id,
+                organization_id=org_id,
+                actor_user_id=user_id,
+                details={"method": "signup"},
+            )
             await self.session.commit()
         except IntegrityError as exc:
             await self.session.rollback()
@@ -152,6 +172,21 @@ class AuthService:
         # account exists; unknown email, wrong password and disabled account look identical.
         password_ok = verify_password(password, user.password_hash if user else DUMMY_PASSWORD_HASH)
         if user is None or not password_ok or not user.is_active:
+            # A system event (no tenant): stored, but hidden from every organization. The
+            # attempted address is kept only as a short fingerprint, since people sometimes type
+            # their password into the email box. Committed here because the error rolls back.
+            await self.audit.record(
+                action=AuditAction.AUTH_LOGIN_FAILED,
+                entity_type="user",
+                entity_id=user.id if user else None,
+                organization_id=None,
+                actor_user_id=user.id if user else None,
+                details={
+                    "reason": "invalid_credentials",
+                    "email_fingerprint": hashlib.sha256(email.lower().encode()).hexdigest()[:12],
+                },
+            )
+            await self.session.commit()
             raise InvalidCredentialsError()
 
         await set_context(self.session, user_id=user.id)
@@ -163,6 +198,14 @@ class AuthService:
         await set_context(self.session, org_id=active.organization_id)
         tokens, _ = await self.issue_session(
             user.id, active.organization_id, active.role, None, client
+        )
+        await self.audit.record(
+            action=AuditAction.AUTH_LOGIN,
+            entity_type="user",
+            entity_id=user.id,
+            organization_id=active.organization_id,
+            actor_user_id=user.id,
+            details={"method": "password"},
         )
         await self.session.commit()
         return tokens
@@ -179,6 +222,15 @@ class AuthService:
             # A rotated or revoked token came back: assume it was stolen. Kill the whole family
             # and commit before raising, or the revocation would be rolled back with the error.
             await self.tokens.revoke_family(row.family_id, now)
+            await set_context(self.session, org_id=row.organization_id, user_id=row.user_id)
+            await self.audit.record(
+                action=AuditAction.AUTH_REFRESH_REUSE,
+                entity_type="user",
+                entity_id=row.user_id,
+                organization_id=row.organization_id,
+                actor_user_id=row.user_id,
+                details={"family_id": row.family_id},
+            )
             await self.session.commit()
             raise InvalidRefreshTokenError()
         if row.expires_at <= now:

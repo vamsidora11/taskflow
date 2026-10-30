@@ -7,9 +7,11 @@ depend on data, such as never leaving an organization without an admin. Audit ho
 
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit import AuditAction
 from app.core.exceptions import LastAdminError, MemberNotFoundError, OrganizationNotFoundError
 from app.core.pagination import decode_cursor, encode_cursor
 from app.core.permissions import Role
@@ -18,13 +20,16 @@ from app.repositories.membership import MemberRow, MembershipRepository
 from app.repositories.organization import OrganizationRepository
 from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.user import UserRepository
+from app.services.audit import AuditService
 from app.services.auth import AuthenticatedUser
 
 
 class OrganizationService:
     def __init__(self, session: AsyncSession, actor: AuthenticatedUser) -> None:
         self.session = session
+        self.actor = actor
         self.org_id = actor.organization_id
+        self.audit = AuditService(session)
         self.orgs = OrganizationRepository(session)
         self.members = MembershipRepository(session, actor.organization_id)
 
@@ -37,9 +42,13 @@ class OrganizationService:
     async def update(self, *, name: str | None) -> Organization:
         org = await self.get()
         if name is not None and name != org.name:
+            before = {"name": org.name}
             org.name = name
             await self.session.flush()
             await self.session.refresh(org)  # pick up the database-set updated_at
+            await self._audit(
+                AuditAction.ORG_UPDATED, "organization", org.id, before, {"name": name}
+            )
         return org
 
     async def list_members(
@@ -58,8 +67,17 @@ class OrganizationService:
             raise MemberNotFoundError()
         if membership.role == Role.ADMIN and role != Role.ADMIN and admins == [user_id]:
             raise LastAdminError()
+        before_role = membership.role
         membership.role = role.value
         await self.session.flush()
+        if before_role != role.value:
+            await self._audit(
+                AuditAction.MEMBER_ROLE_CHANGED,
+                "member",
+                user_id,
+                {"role": before_role},
+                {"role": role.value},
+            )
         return await self._member_row(membership.id, user_id, role.value, membership.created_at)
 
     async def remove_member(self, *, user_id: uuid.UUID) -> None:
@@ -69,11 +87,35 @@ class OrganizationService:
             raise MemberNotFoundError()
         if membership.role == Role.ADMIN and admins == [user_id]:
             raise LastAdminError()
+        removed_role = membership.role
         await self.members.delete(membership)
+        await self._audit(
+            AuditAction.MEMBER_REMOVED, "member", user_id, details={"role": removed_role}
+        )
         # Their access tokens already fail the per-request membership check; ending the refresh
         # sessions too means they cannot mint new ones for this organization either.
         await RefreshTokenRepository(self.session).revoke_for_user_in_org(
             user_id, self.org_id, datetime.now(UTC)
+        )
+
+    async def _audit(
+        self,
+        action: AuditAction,
+        entity_type: str,
+        entity_id: uuid.UUID,
+        before: dict[str, Any] | None = None,
+        after: dict[str, Any] | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        await self.audit.record(
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            organization_id=self.org_id,
+            actor_user_id=self.actor.id,
+            before=before,
+            after=after,
+            details=details,
         )
 
     async def _member_row(

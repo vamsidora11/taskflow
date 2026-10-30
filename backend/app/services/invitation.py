@@ -11,6 +11,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit import AuditAction
 from app.core.config import settings
 from app.core.exceptions import (
     AlreadyMemberError,
@@ -29,6 +30,7 @@ from app.repositories.invitation import InvitationRepository
 from app.repositories.membership import MembershipRepository
 from app.repositories.organization import OrganizationRepository
 from app.repositories.user import UserRepository
+from app.services.audit import AuditService
 from app.services.auth import AuthenticatedUser, AuthService, AuthTokens, ClientInfo
 from app.services.email import EmailMessage
 
@@ -43,6 +45,7 @@ class InvitationService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.identity = IdentityRepository(session)
+        self.audit = AuditService(session)
 
     async def invite(self, *, actor: AuthenticatedUser, email: str, role: Role) -> IssuedInvitation:
         """Create an invitation inside the caller's tenant-scoped transaction."""
@@ -66,6 +69,14 @@ class InvitationService:
             token_hash=hash_token(token),
             invited_by=actor.id,
             expires_at=datetime.now(UTC) + timedelta(days=settings.invitation_ttl_days),
+        )
+        await self.audit.record(
+            action=AuditAction.MEMBER_INVITED,
+            entity_type="invitation",
+            entity_id=invitation.id,
+            organization_id=actor.organization_id,
+            actor_user_id=actor.id,
+            details={"email": email, "role": role.value},
         )
         link = f"{settings.frontend_origin}/accept-invite?token={token}"
         message = EmailMessage(
@@ -124,6 +135,18 @@ class InvitationService:
                     full_name=(full_name or "").strip(),
                 )
             await members.add(user_id=user_id, role=invitation.role)
+            await self.audit.record(
+                action=AuditAction.MEMBER_JOINED,
+                entity_type="member",
+                entity_id=user_id,
+                organization_id=org_id,
+                actor_user_id=user_id,
+                details={
+                    "role": invitation.role,
+                    "invitation_id": invitation.id,
+                    "created_account": user is None,
+                },
+            )
             tokens, _ = await AuthService(self.session).issue_session(
                 user_id, org_id, invitation.role, None, client
             )

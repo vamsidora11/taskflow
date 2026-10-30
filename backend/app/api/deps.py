@@ -1,13 +1,17 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Annotated
 
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import PermissionDeniedError
+from app.core.permissions import Permission, has_permission
 from app.core.security import AccessTokenClaims, decode_access_token
 from app.core.security_scheme import bearer_scheme
 from app.db.session import SessionFactory, get_session_factory, tenant_session
 from app.services.auth import AuthenticatedUser, ClientInfo, resolve_authenticated_user
+from app.services.email import EmailSender, build_email_sender
 
 _CURRENT_USER_KEY = "current_user"
 
@@ -15,6 +19,14 @@ _CURRENT_USER_KEY = "current_user"
 def get_factory() -> SessionFactory:
     """Overridable in tests to point the app at a throwaway database."""
     return get_session_factory()
+
+
+def get_email_sender() -> EmailSender:
+    """Overridable in tests to capture outgoing mail."""
+    return build_email_sender()
+
+
+EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 
 
 async def get_auth_session(
@@ -26,6 +38,9 @@ async def get_auth_session(
     """
     async with factory() as session:
         yield session
+
+
+AuthSession = Annotated[AsyncSession, Depends(get_auth_session, scope="function")]
 
 
 def get_client_info(request: Request) -> ClientInfo:
@@ -50,15 +65,41 @@ async def get_tenant_session(
     """Session scoped to the token's organization for RLS.
 
     The token is re-verified against the live membership before the route runs, so every
-    tenant route is protected even if it never asks for the current user.
+    tenant route is protected even if it never asks for the current user. The transaction
+    commits (or rolls back) when the route returns.
     """
     async with tenant_session(factory, claims.org_id, claims.user_id) as session:
         session.info[_CURRENT_USER_KEY] = await resolve_authenticated_user(session, claims)
         yield session
 
 
-async def get_current_user(
-    session: AsyncSession = Depends(get_tenant_session),
-) -> AuthenticatedUser:
+# `scope="function"` makes FastAPI run this dependency's cleanup, and therefore the COMMIT, before
+# the response is sent. With the default scope the commit would run afterwards: a client could
+# read its 201 before the write is durable, and a failed commit would never reach it. Every use
+# must pass the same scope, or FastAPI would open a second session for the same request.
+TenantSession = Annotated[AsyncSession, Depends(get_tenant_session, scope="function")]
+
+
+async def get_current_user(session: TenantSession) -> AuthenticatedUser:
     user: AuthenticatedUser = session.info[_CURRENT_USER_KEY]
     return user
+
+
+CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]
+
+
+def require_permission(
+    permission: Permission,
+) -> Callable[[AuthenticatedUser], Awaitable[AuthenticatedUser]]:
+    """Dependency factory: 403 unless the caller's role in the active organization has the
+    permission. Returns the user, so routes can both guard and use it:
+
+        user: AuthenticatedUser = Depends(require_permission(Permission.TASK_DELETE))
+    """
+
+    async def checker(user: CurrentUser) -> AuthenticatedUser:
+        if not has_permission(user.role, permission):
+            raise PermissionDeniedError()
+        return user
+
+    return checker

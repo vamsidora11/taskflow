@@ -2,7 +2,8 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-const backend = 'http://localhost:8000'
+// Override with VITE_API_TARGET when the backend is not on the default port.
+const backend = process.env.VITE_API_TARGET ?? 'http://localhost:8000'
 
 export default defineConfig({
   plugins: [react()],

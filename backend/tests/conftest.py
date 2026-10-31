@@ -71,6 +71,18 @@ def relaxed_rate_limits(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(settings, name, "1000000/minute")
 
 
+@pytest.fixture(autouse=True)
+def no_shared_real_redis(monkeypatch: pytest.MonkeyPatch, redis_client: Redis) -> None:
+    """Never let a test reach the process-wide cached Redis client.
+
+    That client binds to the first event loop that uses it, and every test runs in its own loop,
+    so with a reachable Redis (as in CI) later tests died with "Event loop is closed". Apps built
+    without the `api` fixture now get the per-test in-memory Redis too.
+    """
+    monkeypatch.setattr("app.api.deps.get_redis", lambda: redis_client)
+    monkeypatch.setattr("app.api.v1.health.get_redis", lambda: redis_client)
+
+
 @pytest.fixture
 def redis_client() -> Redis:
     """An in-memory Redis, fresh per test. Real Redis is covered by test_idempotency_store."""

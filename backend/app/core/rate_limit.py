@@ -13,7 +13,6 @@ import re
 from dataclasses import dataclass
 
 from redis.asyncio import Redis
-from redis.exceptions import RedisError
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ class RateLimiter:
             if ttl < 0:  # a key without expiry would block forever; repair it
                 await self._redis.expire(key, limit.window_seconds)
                 ttl = limit.window_seconds
-        except (RedisError, OSError) as exc:
+        except Exception as exc:  # noqa: BLE001 - the limiter must never take the API down
             logger.warning("rate limiter unavailable, failing open: %s", type(exc).__name__)
             return RateResult(True, limit.count, limit.count, 0, degraded=True)
         allowed = int(count) <= limit.count
